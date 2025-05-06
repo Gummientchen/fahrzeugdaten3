@@ -1,0 +1,226 @@
+body {
+  font-family: sans-serif;
+  margin: 10px; /* Reduced margin for more space */
+  background-color: #f4f4f4;
+}
+.container {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 5px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+.search-form {
+  margin-bottom: 20px;
+}
+.search-form label {
+  display: inline-block;
+  width: 150px; /* Adjust as needed */
+  margin-bottom: 5px;
+  vertical-align: middle; /* Align with input */
+}
+.search-form input[type="text"] {
+  padding: 8px;
+  margin-bottom: 10px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  width: 250px; /* Adjust as needed */
+  vertical-align: middle; /* Align with input */
+}
+.search-form input[type="submit"] {
+  padding: 10px 15px;
+  background-color: #5cb85c;
+  color: white;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+}
+.search-form input[type="submit"]:hover {
+  background-color: #4cae4c;
+}
+.results-count,
+.error-message,
+.no-results-message {
+  margin-bottom: 15px;
+  padding: 10px;
+  border-radius: 3px;
+}
+.results-count {
+  background-color: #dff0d8;
+  border: 1px solid #d6e9c6;
+  color: #3c763d;
+}
+.error-message {
+  background-color: #f2dede;
+  border: 1px solid #ebccd1;
+  color: #a94442;
+}
+.no-results-message {
+  background-color: #fcf8e3;
+  border: 1px solid #faebcc;
+  color: #8a6d3b;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+  table-layout: fixed; /* Added for more predictable column behavior */
+}
+th,
+td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+  /* General word break for all cells, can be overridden */
+  word-wrap: break-word; /* For older browsers */
+  overflow-wrap: break-word;
+}
+th {
+  background-color: #f0f0f0;
+}
+/* Style for the first column (labels) in accordion tables */
+.accordion-panel table td:first-child {
+  width: 40%; /* Adjust percentage as needed for label column width */
+  /* overflow-wrap is inherited from general td style, add hyphens */
+  -webkit-hyphens: auto;
+  -ms-hyphens: auto;
+  hyphens: auto;
+}
+/* Style for the second column (values) in accordion tables */
+.accordion-panel table td:nth-child(2) {
+  width: 60%; /* Adjust percentage as needed for value column width */
+  word-break: break-all; /* More aggressive breaking for values if needed */
+}
+.accordion-panel > div > table {
+  /* Target tables inside the accordion's overflow div */
+  margin-left: 0; /* Remove any left margin */
+}
+.multiple-results-list {
+  list-style-type: none; /* Remove bullet points */
+  padding-left: 0; /* Remove default padding for ul */
+}
+.multiple-results-list li {
+  margin-bottom: 5px;
+  padding: 5px;
+  border-radius: 3px;
+  /* New styles for card-like appearance */
+  background-color: #f9f9f9;
+  border: 1px solid #eee;
+  padding: 10px 15px;
+  margin-bottom: 10px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+.multiple-results-list li div {
+  margin-bottom: 5px; /* Space between data lines in the card */
+}
+.clickable-tg-code {
+  cursor: pointer;
+  color: #007bff; /* Make it look like a link */
+}
+.form-field-container {
+  position: relative;
+  margin-bottom: 10px; /* Match original input margin + <br> effect */
+}
+.autocomplete-suggestions {
+  border: 1px solid #ccc;
+  border-top: none;
+  max-height: 150px;
+  overflow-y: auto;
+  position: absolute;
+  background-color: white;
+  z-index: 1000;
+  /* Make suggestions box align under and match width of the input field */
+  width: 250px; /* Should match the width of #marke_input and #typ_input */
+  left: 150px; /* Should be approx the width of the label to align under input */
+  /* If label width is 150px, and input is directly next to it. */
+  box-sizing: border-box;
+  display: none; /* Initially hidden */
+}
+.autocomplete-suggestions div {
+  padding: 8px;
+  cursor: pointer;
+}
+.autocomplete-suggestions div:hover {
+  background-color: #f0f0f0;
+}
+.form-field-container input[type="text"] {
+  margin-bottom: 0; /* Override general margin, space is now handled by container's margin-bottom */
+}
+/* Accordion Styles */
+.accordion-header {
+  background-color: #e9ecef; /* Light grey, distinct from table header */
+  color: #495057;
+  cursor: pointer;
+  padding: 12px 18px;
+  width: 100%;
+  border: none;
+  text-align: left;
+  outline: none;
+  font-size: 1.1em;
+  font-weight: bold;
+  transition: background-color 0.3s ease;
+  margin-top: 8px;
+  border-radius: 4px;
+  border-bottom: 1px solid #ced4da;
+}
+.accordion-header.active,
+.accordion-header:hover {
+  background-color: #dee2e6;
+}
+.accordion-header:after {
+  /* Plus/Minus icon */
+  content: "\002B"; /* Plus */
+  font-size: 1.1em;
+  color: #495057;
+  float: right;
+  margin-left: 5px;
+}
+.accordion-header.active:after {
+  content: "\2212"; /* Minus */
+}
+.accordion-panel {
+  padding: 0; /* Panel itself has no padding, table inside will */
+  background-color: white;
+  display: none; /* Hidden by default */
+  overflow: hidden;
+}
+/* Search History Styles */
+#search_history_btn {
+  padding: 8px 12px;
+  margin-left: 10px; /* Space next to Search button */
+  background-color: #6c757d; /* A neutral color */
+  color: white;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  vertical-align: middle; /* Align with other form elements */
+}
+#search_history_btn:hover {
+  background-color: #5a6268;
+}
+.search-history-dropdown {
+  position: absolute;
+  background-color: white;
+  border: 1px solid #ccc;
+  z-index: 1001; /* Above autocomplete */
+  max-height: 250px;
+  overflow-y: auto;
+  width: 300px; /* Adjust as needed */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+  margin-top: 5px; /* Space below the button row */
+}
+.search-history-dropdown ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+.search-history-dropdown li {
+  padding: 8px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid #eee;
+}
+.search-history-dropdown li:last-child {
+  border-bottom: none;
+}
+.search-history-dropdown li:hover {
+  background-color: #f0f0f0;
+}
