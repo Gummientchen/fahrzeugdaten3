@@ -12,7 +12,7 @@ app = Flask(__name__)
 
 # --- Display Labels for Known Columns ---
 DISPLAY_LABELS = {
-    "cars_tg_code": "TG-Code (Typengenehmigungsnummer)",
+    "cars_tg_code": "TG-Code (Typen&shy;genehmigungs&shy;nummer)",
     "cars_col_01_fahrzeugart_value": "Fahrzeugart",
     "cars_col_02_fahrzeugsubart_code_value": "Fahrzeugsubart Code",
     "cars_col_02_fahrzeugsubart_value": "Fahrzeugsubart",
@@ -64,8 +64,8 @@ DISPLAY_LABELS = {
     "cars_col_35_geraeuschdaempfung_z2_value": "Geräuschdämpfung Z2",
     "cars_col_35_geraeuschdaempfung_z3_value": "Geräuschdämpfung Z3",
     "cars_col_35_geraeuschdaempfung_z4_value": "Geräuschdämpfung Z4",
-    "cars_col_37_anzahl_plaetze_vorne": "Anzahl Plaetze Vorne",
-    "cars_col_37_anzahl_plaetze_total": "Anzahl Plaetze Total",
+    "cars_col_37_anzahl_plaetze_vorne": "Anzahl Plätze Vorne",
+    "cars_col_37_anzahl_plaetze_total": "Anzahl Plätze Total",
     "cars_col_38_anzahl_tueren_value": "Anzahl Türen",
     "cars_col_39_rueckspiegel_value": "Rückspiegel Art",
     "cars_col_55_keine_dachlast_value": "Keine Dachlast", # This one is kept
@@ -81,10 +81,10 @@ DISPLAY_LABELS = {
     "cars_col_40_laenge": "Länge", "cars_col_41_breite": "Breite", "cars_col_42_hoehe": "Höhe",
     "cars_col_44_abstand_achse_1_2": "Abstand Achse 1-2", "cars_col_45_abstand_achse_2_3": "Abstand Achse 2-3", "cars_col_46_abstand_achse_3_4": "Abstand Achse 3-4",
     "cars_col_47_spur_achse_1": "Spur Achse 1", "cars_col_48_spur_achse_2": "Spur Achse 2", "cars_col_49_spur_achse_3": "Spur Achse 3", "cars_col_50_spur_achse_4": "Spur Achse 4",
-    "cars_col_52_leergewicht": "Leergewicht", "cars_col_53_garantiegewicht": "Garantiegewicht",
+    "cars_col_52_leergewicht": "Leergewicht", "cars_col_53_garantiegewicht": "Gesamtgewicht",
     "cars_col_43_ueberhang_hinten": "Überhang Hinten", 
-    "cars_col_54_achsgarantie_v": "Achsgarantie Vorne", 
-    "cars_col_54_achsgarantie_h": "Achsgarantie Hinten", 
+    "cars_col_54_achsgarantie_v": "Achslast Vorne", 
+    "cars_col_54_achsgarantie_h": "Achslast Hinten", 
     
     # Emissions table fields
     "emissions_abgasreinigung_value": "Abgasreinigung (Emissionen)",
@@ -115,14 +115,14 @@ DATA_GROUPS_ORDER = [
 
 DATA_GROUPS_MAPPING = {
     # Fahrzeug
-    "TG-Code (Typengenehmigungsnummer)": "Fahrzeug", "Fahrzeugart": "Fahrzeug", "Fahrzeugklasse": "Fahrzeug",
+    "TG-Code (Typen&shy;genehmigungs&shy;nummer)": "Fahrzeug", "Fahrzeugart": "Fahrzeug", "Fahrzeugklasse": "Fahrzeug",
     "Marke": "Fahrzeug", "Typ": "Fahrzeug", "Karosserieform": "Fahrzeug", "EU Gesamtgenehmigung": "Fahrzeug",
     "cars_col_05_typ_variante_version": "Fahrzeug", "Hersteller (Code 10)": "Fahrzeug", "Herstellerplakette": "Fahrzeug", 
     "Fahrgestellnummer Struktur": "Fahrzeug", "Fahrgestellnummer": "Fahrzeug",
     "Rückspiegel Art": "Fahrzeug", "Vorziffer": "Fahrzeug", "EFKO Code": "Fahrzeug",
 
     # Sitze & Türen
-    "Anzahl Türen": "Sitze & Türen", "Anzahl Plaetze Vorne": "Sitze & Türen", "Anzahl Plaetze Total": "Sitze & Türen",
+    "Anzahl Türen": "Sitze & Türen", "Anzahl Plätze Vorne": "Sitze & Türen", "Anzahl Plätze Total": "Sitze & Türen",
 
     # Motor
     "Motor Marke": "Motor", "Motor Typ": "Motor", "Motor Bauart": "Motor", "Treibstoff (Motor)": "Motor",
@@ -150,8 +150,8 @@ DATA_GROUPS_MAPPING = {
     "Spur Achse 1": "Achsen & Spur", "Spur Achse 2": "Achsen & Spur", "Spur Achse 3": "Achsen & Spur", "Spur Achse 4": "Achsen & Spur",
 
     # Gewichte
-    "Leergewicht": "Gewichte", "Garantiegewicht": "Gewichte", "Keine Dachlast": "Gewichte",
-    "Achsgarantie Vorne": "Gewichte", "Achsgarantie Hinten": "Gewichte", "Dachlast": "Gewichte",
+    "Leergewicht": "Gewichte", "Gesamtgewicht": "Gewichte", "Keine Dachlast": "Gewichte",
+    "Achslast Vorne": "Gewichte", "Achslast Hinten": "Gewichte", "Dachlast": "Gewichte",
 
     # Räder & Reifen
     "Reifen/Felgen Kombi (69)": "Räder & Reifen", "Reifen/Felgen (69)": "Räder & Reifen",
@@ -217,7 +217,7 @@ FIELD_UNITS = {
     "Spur Achse 3": "mm",
     "Spur Achse 4": "mm",
     "Leergewicht": "kg",
-    "Garantiegewicht": "kg",
+    "Gesamtgewicht": "kg",
     "Vmax": "km/h",
     "Hubraum": "cm³",
     "Leistung": "kW",
@@ -228,8 +228,8 @@ FIELD_UNITS = {
     "Standgeräusch": "dB(A)",
     "Standgeräusch bei n/min": "rpm", 
     "Überhang Hinten": "mm", 
-    "Achsgarantie Vorne": "kg", 
-    "Achsgarantie Hinten": "kg", 
+    "Achslast Vorne": "kg", 
+    "Achslast Hinten": "kg", 
     "Verbrauch (TC)": "l/100km", 
     "Dachlast": "kg", 
     "Elektrische Reichweite WLTP": "km", 

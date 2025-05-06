@@ -7,7 +7,7 @@
     <style>
       body {
         font-family: sans-serif;
-        margin: 20px;
+        margin: 10px; /* Reduced margin for more space */
         background-color: #f4f4f4;
       }
       .container {
@@ -70,15 +70,36 @@
         width: 100%;
         border-collapse: collapse;
         margin-bottom: 20px;
+        table-layout: fixed; /* Added for more predictable column behavior */
       }
       th,
       td {
         border: 1px solid #ddd;
         padding: 8px;
         text-align: left;
+        /* General word break for all cells, can be overridden */
+        word-wrap: break-word; /* For older browsers */
+        overflow-wrap: break-word;
       }
       th {
         background-color: #f0f0f0;
+      }
+      /* Style for the first column (labels) in accordion tables */
+      .accordion-panel table td:first-child {
+        width: 40%; /* Adjust percentage as needed for label column width */
+        /* overflow-wrap is inherited from general td style, add hyphens */
+        -webkit-hyphens: auto;
+        -ms-hyphens: auto;
+        hyphens: auto;
+      }
+      /* Style for the second column (values) in accordion tables */
+      .accordion-panel table td:nth-child(2) {
+        width: 60%; /* Adjust percentage as needed for value column width */
+        word-break: break-all; /* More aggressive breaking for values if needed */
+      }
+      .accordion-panel > div > table {
+        /* Target tables inside the accordion's overflow div */
+        margin-left: 0; /* Remove any left margin */
       }
       /* .group-title { (Old style, replaced by accordion header)
         font-size: 1.2em;
@@ -236,13 +257,15 @@
       car_data_grouped and car_data_grouped[group_name] %}
       <button class="accordion-header">{{ group_name }}</button>
       <div class="accordion-panel">
-        <div style="overflow-x: auto; padding: 15px">
+        <div style="overflow-x: auto; padding: 15px 0">
           <!-- For responsive tables & panel content padding -->
           <table>
             {% for key, value in car_data_grouped[group_name].items() %}
             <tr>
-              <td>{{ key }}</td>
+              <td>{{ key|safe }}</td>
+              {# Label cell - will use td:first-child style #}
               <td>{{ value }}</td>
+              {# Value cell - will use td:nth-child(2) style #}
             </tr>
             {% endfor %}
           </table>
@@ -372,6 +395,29 @@
             true
           ); // Pass true for isTypField
 
+          // Cookie helper functions
+          function setCookie(name, value, days) {
+            let expires = "";
+            if (days) {
+              const date = new Date();
+              date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
+              expires = "; expires=" + date.toUTCString();
+            }
+            document.cookie =
+              name + "=" + (value || "") + expires + "; path=/; SameSite=Lax";
+          }
+          function getCookie(name) {
+            const nameEQ = name + "=";
+            const ca = document.cookie.split(";");
+            for (let i = 0; i < ca.length; i++) {
+              let c = ca[i];
+              while (c.charAt(0) === " ") c = c.substring(1, c.length);
+              if (c.indexOf(nameEQ) === 0)
+                return c.substring(nameEQ.length, c.length);
+            }
+            return null;
+          }
+
           // Accordion Logic
           const accHeaders = document.querySelectorAll(".accordion-header");
           accHeaders.forEach((header) => {
@@ -383,10 +429,18 @@
               } else {
                 panel.style.display = "block";
               }
+              // Save open accordion state to cookie
+              const openAccordions = [];
+              accHeaders.forEach((h) => {
+                if (h.classList.contains("active")) {
+                  openAccordions.push(h.textContent.trim());
+                }
+              });
+              setCookie("openAccordions", JSON.stringify(openAccordions), 180); // Save for 180 days
             });
           });
 
-          // Optional: Open the first accordion panel by default if in single result view
+          // Restore accordion state from cookie or open the first one
           if (accHeaders.length > 0) {
             const carDetailsTitle = document.querySelector("h2");
             // Check if the h2 "Car Details" exists, indicating single result view
@@ -394,9 +448,25 @@
               carDetailsTitle &&
               carDetailsTitle.textContent.trim() === "Car Details"
             ) {
-              const firstHeader = accHeaders[0];
-              firstHeader.classList.add("active");
-              firstHeader.nextElementSibling.style.display = "block";
+              const savedOpenAccordions = getCookie("openAccordions");
+              if (savedOpenAccordions) {
+                try {
+                  const openLabels = JSON.parse(savedOpenAccordions);
+                  accHeaders.forEach((header) => {
+                    if (openLabels.includes(header.textContent.trim())) {
+                      header.classList.add("active");
+                      header.nextElementSibling.style.display = "block";
+                    }
+                  });
+                } catch (e) {
+                  console.error("Error parsing accordion cookie", e);
+                }
+              } else {
+                // Default: Open the first accordion panel if no cookie
+                const firstHeader = accHeaders[0];
+                firstHeader.classList.add("active");
+                firstHeader.nextElementSibling.style.display = "block";
+              }
             }
           }
 
