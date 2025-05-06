@@ -1,8 +1,9 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify # Added jsonify
+import sqlite3 # For autocomplete database access
 
-from config import DATABASE_PATH, STANDARDIZED_TG_CODE_COL # Added STANDARDIZED_TG_CODE_COL for clarity
+from config import DATABASE_PATH, STANDARDIZED_TG_CODE_COL, COLUMNS_TO_NORMALIZE_CONFIG
 from search import search_car_data 
-from logger import set_log_level, LOG_LEVEL_INFO 
+from logger import set_log_level, LOG_LEVEL_INFO, LOG_LEVEL_ERROR
 
 app = Flask(__name__)
 
@@ -25,8 +26,8 @@ DISPLAY_LABELS = {
     "cars_col_10_hersteller_value": "Hersteller (Code 10)",
     "cars_col_10_efko_code_value": "EFKO Code",
     "cars_col_11_herstellerplakette_value": "Herstellerplakette",
-    "cars_col_12_fahrgestellnummer_struktur_value": "Fahrgestellnummer Struktur", # Corrected from _value
-    "cars_col_12_fahrgestellnummer_value": "Fahrgestellnummer", # Assuming this might exist if not normalized
+    "cars_col_12_fahrgestellnummer_struktur_value": "Fahrgestellnummer Struktur", 
+    "cars_col_12_fahrgestellnummer_value": "Fahrgestellnummer", 
     "cars_col_14_achsen_raeder_value": "Achsen/Räder",
     "cars_col_15_federung_value": "Federung",
     "cars_col_16_lenkung_value": "Lenkung",
@@ -56,8 +57,8 @@ DISPLAY_LABELS = {
     "cars_col_32_schalldaempfer_2_bez_value": "Schalldämpfer 2 Bez.",
     "cars_col_33_schalldaempfer_3_art_value": "Schalldämpfer 3 Art",
     "cars_col_33_schalldaempfer_3_bez_value": "Schalldämpfer 3 Bez.",
-    "cars_col_34_motorkennzeichen_art_value": "Motorkennzeichen Art", # Corrected from _value
-    "cars_col_34_motorkennzeichen_value": "Motorkennzeichen", # If not normalized
+    "cars_col_34_motorkennzeichen_art_value": "Motorkennzeichen Art", 
+    "cars_col_34_motorkennzeichen_value": "Motorkennzeichen", 
     "cars_col_34_motorkennzeichen_anbringungsort_value": "Motorkennzeichen Anbringungsort",
     "cars_col_35_geraeuschdaempfung_z1_value": "Geräuschdämpfung Z1",
     "cars_col_35_geraeuschdaempfung_z2_value": "Geräuschdämpfung Z2",
@@ -68,12 +69,12 @@ DISPLAY_LABELS = {
     "cars_col_38_anzahl_tueren_value": "Anzahl Türen",
     "cars_col_39_rueckspiegel_value": "Rückspiegel Art",
     "cars_col_55_keine_dachlast_value": "Keine Dachlast", # This one is kept
-    "cars_col_69_reifen_felgen_kombination_value": "Reifen/Felgen Kombi (69)", # Corrected from _value
-    "cars_col_69_reifen_felgen_value": "Reifen/Felgen (69)", # If not normalized
-    "cars_col_70_reifen_felgen_kombination_value": "Reifen/Felgen Kombi (70)", # Corrected from _value
-    "cars_col_70_reifen_felgen_value": "Reifen/Felgen (70)", # If not normalized
-    "cars_col_71_reifen_felgen_kombination_value": "Reifen/Felgen Kombi (71)", # Corrected from _value
-    "cars_col_71_reifen_felgen_value": "Reifen/Felgen (71)", # If not normalized
+    "cars_col_69_reifen_felgen_kombination_value": "Reifen/Felgen Kombi (69)", 
+    "cars_col_69_reifen_felgen_value": "Reifen/Felgen (69)", 
+    "cars_col_70_reifen_felgen_kombination_value": "Reifen/Felgen Kombi (70)", 
+    "cars_col_70_reifen_felgen_value": "Reifen/Felgen (70)", 
+    "cars_col_71_reifen_felgen_kombination_value": "Reifen/Felgen Kombi (71)", 
+    "cars_col_71_reifen_felgen_value": "Reifen/Felgen (71)", 
     "cars_bemerkungen_z1_value": "Bemerkung Z1", "cars_bemerkungen_z2_value": "Bemerkung Z2", "cars_bemerkungen_z3_value": "Bemerkung Z3", "cars_bemerkungen_z4_value": "Bemerkung Z4", "cars_bemerkungen_z5_value": "Bemerkung Z5", "cars_bemerkungen_z6_value": "Bemerkung Z6", "cars_bemerkungen_z7_value": "Bemerkung Z7", "cars_bemerkungen_z8_value": "Bemerkung Z8", "cars_bemerkungen_z9_value": "Bemerkung Z9", "cars_bemerkungen_z10_value": "Bemerkung Z10", "cars_bemerkungen_z11_value": "Bemerkung Z11", "cars_bemerkungen_z12_value": "Bemerkung Z12", "cars_bemerkungen_z13_value": "Bemerkung Z13", "cars_bemerkungen_z14_value": "Bemerkung Z14", "cars_bemerkungen_z15_value": "Bemerkung Z15", "cars_bemerkungen_z16_value": "Bemerkung Z16", "cars_bemerkungen_z17_value": "Bemerkung Z17", "cars_bemerkungen_z18_value": "Bemerkung Z18", "cars_bemerkungen_z19_value": "Bemerkung Z19", "cars_bemerkungen_z20_value": "Bemerkung Z20", "cars_bemerkungen_z21_value": "Bemerkung Z21", "cars_bemerkungen_z22_value": "Bemerkung Z22", "cars_bemerkungen_z23_value": "Bemerkung Z23", "cars_bemerkungen_z24_value": "Bemerkung Z24",
 
     # Von/Bis pairs - base names for combined fields
@@ -81,26 +82,27 @@ DISPLAY_LABELS = {
     "cars_col_44_abstand_achse_1_2": "Abstand Achse 1-2", "cars_col_45_abstand_achse_2_3": "Abstand Achse 2-3", "cars_col_46_abstand_achse_3_4": "Abstand Achse 3-4",
     "cars_col_47_spur_achse_1": "Spur Achse 1", "cars_col_48_spur_achse_2": "Spur Achse 2", "cars_col_49_spur_achse_3": "Spur Achse 3", "cars_col_50_spur_achse_4": "Spur Achse 4",
     "cars_col_52_leergewicht": "Leergewicht", "cars_col_53_garantiegewicht": "Garantiegewicht",
-    "cars_col_43_ueberhang_hinten": "Überhang Hinten", # New
-    "cars_col_54_achsgarantie_v": "Achsgarantie Vorne", # New
-    "cars_col_54_achsgarantie_h": "Achsgarantie Hinten", # New
+    "cars_col_43_ueberhang_hinten": "Überhang Hinten", 
+    "cars_col_54_achsgarantie_v": "Achsgarantie Vorne", 
+    "cars_col_54_achsgarantie_h": "Achsgarantie Hinten", 
     
     # Emissions table fields
+    "emissions_abgasreinigung_value": "Abgasreinigung (Emissionen)",
     "emissions_abgascode_value": "Abgascode", "emissions_emissionscode_value": "Emissionscode",
     "emissions_geraeuschcode_value": "Geräuschcode", "emissions_bemerkung_value": "Bemerkung (Emissionen)",
-    "emissions_vmax": "Vmax", # Combined from emissions_vmax_von/bis
+    "emissions_vmax": "Vmax", 
     "emissions_hubraum": "Hubraum", "emissions_leistung": "Leistung", "emissions_leistung_bei_n_min": "Leistung bei n/min",
     "emissions_drehmoment": "Drehmoment", "emissions_drehmoment_bei_n_min": "Drehmoment bei n/min",
     "emissions_fahrgeraeusch": "Fahrgeräusch", "emissions_standgeraeusch": "Standgeräusch",
     "emissions_standgeraeusch_bei_n_min": "Standgeräusch bei n/min",
     "emissions_tc_consumption": "Verbrauch (TC)",
-    "emissions_iachse": "I-Achse", # Corrected key: removed _value
+    "emissions_iachse": "I-Achse (Emissionen)", 
     # Consumption table fields
-    "consumption_treibstoff_value": "Treibstoff", "consumption_getriebe_value": "Getriebe (Verbrauch)",
+    "consumption_treibstoff_value": "Treibstoff (Verbrauch)", "consumption_getriebe_value": "Getriebe (Verbrauch)",
     "consumption_hinweis_value": "Hinweis (Verbrauch)",
-    "consumption_el_reichweite_wltp": "Elektrische Reichweite WLTP", # Combined from _von/_bis
+    "consumption_el_reichweite_wltp": "Elektrische Reichweite WLTP", 
     "consumption_el_verbrauch_wltp": "Elektrischer Verbrauch WLTP",
-    "cars_col_55_dachlast": "Dachlast", # New (assuming this is the actual load value)
+    "cars_col_55_dachlast": "Dachlast", 
     "consumption_energieeffizienzkategorie_value": "Energieeffizienzkategorie",
 }
 
@@ -108,14 +110,14 @@ DISPLAY_LABELS = {
 DATA_GROUPS_ORDER = [
     "Fahrzeug", "Sitze & Türen", "Motor", "Getriebe", "Bremsen", "Masse & Abmessungen", "Achsen & Spur", 
     "Gewichte", "Räder & Reifen", "Leistungsdaten", "Verbrauch & Emissionen", 
-    "Bemerkungen", "Sonstige Daten" # Added Sonstige Daten
+    "Bemerkungen", "Sonstige Daten" 
 ]
 
 DATA_GROUPS_MAPPING = {
     # Fahrzeug
     "TG-Code (Typengenehmigungsnummer)": "Fahrzeug", "Fahrzeugart": "Fahrzeug", "Fahrzeugklasse": "Fahrzeug",
     "Marke": "Fahrzeug", "Typ": "Fahrzeug", "Karosserieform": "Fahrzeug", "EU Gesamtgenehmigung": "Fahrzeug",
-    "cars_col_05_typ_variante_version": "Fahrzeug", "Hersteller (Code 10)": "Fahrzeug", "Herstellerplakette": "Fahrzeug", # Assuming cars_col_05_typ_variante_version is a direct key or its _value variant
+    "cars_col_05_typ_variante_version": "Fahrzeug", "Hersteller (Code 10)": "Fahrzeug", "Herstellerplakette": "Fahrzeug", 
     "Fahrgestellnummer Struktur": "Fahrzeug", "Fahrgestellnummer": "Fahrzeug",
     "Rückspiegel Art": "Fahrzeug", "Vorziffer": "Fahrzeug", "EFKO Code": "Fahrzeug",
 
@@ -125,7 +127,7 @@ DATA_GROUPS_MAPPING = {
     # Motor
     "Motor Marke": "Motor", "Motor Typ": "Motor", "Motor Bauart": "Motor", "Treibstoff (Motor)": "Motor",
     "Motorkennzeichen Art": "Motor", "Motorkennzeichen": "Motor", "Motorkennzeichen Anbringungsort": "Motor",
-    "Hubraum": "Motor", "Leistung bei n/min": "Motor", # "Leistung" moved to Leistungsdaten
+    "Hubraum": "Motor", "Leistung bei n/min": "Motor", 
     "Drehmoment": "Motor", "Drehmoment bei n/min": "Motor",
 
     # Getriebe
@@ -133,7 +135,7 @@ DATA_GROUPS_MAPPING = {
     "Getriebe 2 Art": "Getriebe", "Getriebe 2 Zuordnung": "Getriebe",
     "Getriebe 3 Art": "Getriebe", "Getriebe 3 Zuordnung": "Getriebe",
     "Getriebe 4 Art": "Getriebe", "Getriebe 4 Zuordnung": "Getriebe", "I-Achse (Emissionen)": "Getriebe",
-    "Achsantrieb": "Getriebe", # Could also be Achsen
+    "Achsantrieb": "Getriebe", 
 
     # Bremsen
     "Betriebsbremse Z1": "Bremsen", "Betriebsbremse Z2": "Bremsen", "Betriebsbremse Z3": "Bremsen",
@@ -156,11 +158,12 @@ DATA_GROUPS_MAPPING = {
     "Reifen/Felgen Kombi (70)": "Räder & Reifen", "Reifen/Felgen (70)": "Räder & Reifen",
     "Reifen/Felgen Kombi (71)": "Räder & Reifen", "Reifen/Felgen (71)": "Räder & Reifen",
 
-    # Leistungsdaten (Vmax from emissions is already here, adding the new one)
+    # Leistungsdaten
     "Vmax": "Leistungsdaten", "Leistung": "Leistungsdaten",
 
     # Verbrauch & Emissionen
-    "Abgasreinigung": "Verbrauch & Emissionen", "Schalldämpfer 1 Art": "Verbrauch & Emissionen", "Schalldämpfer 1 Bez.": "Verbrauch & Emissionen",
+    "Abgasreinigung": "Verbrauch & Emissionen", "Abgasreinigung (Emissionen)": "Verbrauch & Emissionen",
+    "Schalldämpfer 1 Art": "Verbrauch & Emissionen", "Schalldämpfer 1 Bez.": "Verbrauch & Emissionen",
     "Schalldämpfer 2 Art": "Verbrauch & Emissionen", "Schalldämpfer 2 Bez.": "Verbrauch & Emissionen",
     "Schalldämpfer 3 Art": "Verbrauch & Emissionen", "Schalldämpfer 3 Bez.": "Verbrauch & Emissionen",
     "Geräuschdämpfung Z1": "Verbrauch & Emissionen", "Geräuschdämpfung Z2": "Verbrauch & Emissionen",
@@ -170,7 +173,7 @@ DATA_GROUPS_MAPPING = {
     "Verbrauch (TC)": "Verbrauch & Emissionen", "Elektrischer Verbrauch WLTP": "Verbrauch & Emissionen",
     "Elektrische Reichweite WLTP": "Verbrauch & Emissionen", "Energieeffizienzkategorie": "Verbrauch & Emissionen",
     "Treibstoff (Verbrauch)": "Verbrauch & Emissionen", "Getriebe (Verbrauch)": "Verbrauch & Emissionen", "Hinweis (Verbrauch)": "Verbrauch & Emissionen",
-    "Consumption El Reichweite Von Wltp": "Verbrauch & Emissionen", # Added per user request
+    "Consumption El Reichweite Von Wltp": "Verbrauch & Emissionen", 
 
     # Bemerkungen (will be caught by fallback if labels match "Bemerkung Zx")
 }
@@ -218,20 +221,20 @@ FIELD_UNITS = {
     "Vmax": "km/h",
     "Hubraum": "cm³",
     "Leistung": "kW",
-    "Leistung bei n/min": "rpm", # Unit for the n/min part
+    "Leistung bei n/min": "rpm", 
     "Drehmoment": "Nm",
-    "Drehmoment bei n/min": "rpm", # Unit for the n/min part
+    "Drehmoment bei n/min": "rpm", 
     "Fahrgeräusch": "dB(A)",
     "Standgeräusch": "dB(A)",
-    "Standgeräusch bei n/min": "rpm", # Unit for the n/min part
-    "Überhang Hinten": "mm", # New
-    "Achsgarantie Vorne": "kg", # New
-    "Achsgarantie Hinten": "kg", # New
-    "Verbrauch (TC)": "l/100km", # Assuming liquid fuel consumption
-    "Dachlast": "kg", # New
-    "Elektrische Reichweite WLTP": "km", # This seems correct
-    "Consumption El Reichweite Von Wltp": "km", # Added per user request
-    "Elektrischer Verbrauch WLTP": "Wh/km", # Changed to Wh/km as primary
+    "Standgeräusch bei n/min": "rpm", 
+    "Überhang Hinten": "mm", 
+    "Achsgarantie Vorne": "kg", 
+    "Achsgarantie Hinten": "kg", 
+    "Verbrauch (TC)": "l/100km", 
+    "Dachlast": "kg", 
+    "Elektrische Reichweite WLTP": "km", 
+    "Consumption El Reichweite Von Wltp": "km", 
+    "Elektrischer Verbrauch WLTP": "Wh/km", 
 }
 
 def _is_value_valid_for_display(value_to_check):
@@ -259,6 +262,114 @@ def _is_value_valid_for_display(value_to_check):
     # For any other data types (booleans, etc.), they are considered valid if not None.
 
     return True, processed_value
+
+def _process_single_car_result(row_dict, display_labels_config, data_groups_order_config, 
+                               data_groups_mapping_config, field_units_config, labels_to_exclude_config, 
+                               standardized_tg_code_col_config):
+    """
+    Processes a single car data row (dictionary) into a grouped and formatted structure for display.
+    """
+    grouped_data = {group_name: {} for group_name in data_groups_order_config}
+    processed_db_keys = set()
+
+    for db_key, value in row_dict.items():
+        if db_key in processed_db_keys:
+            continue
+
+        key_for_display_lookup = db_key
+        value_to_display_final = None 
+
+        if db_key.endswith("_von"):
+            base_name = db_key[:-4]
+            bis_key = base_name + "_bis"
+            val_von = value
+            val_bis = row_dict.get(bis_key)
+
+            if bis_key in row_dict:
+                processed_db_keys.add(bis_key)
+
+            is_von_valid, processed_von = _is_value_valid_for_display(val_von)
+            is_bis_valid, processed_bis = _is_value_valid_for_display(val_bis)
+
+            if is_von_valid and is_bis_valid:
+                str_von, str_bis = str(processed_von), str(processed_bis)
+                value_to_display_final = str_von if str_von == str_bis else f"{str_von} - {str_bis}"
+            elif is_von_valid:
+                value_to_display_final = str(processed_von)
+            elif is_bis_valid:
+                value_to_display_final = str(processed_bis)
+            key_for_display_lookup = base_name
+        else:
+            is_a_tg_code_field = standardized_tg_code_col_config in db_key 
+            if db_key.endswith("_id") and not is_a_tg_code_field and db_key not in display_labels_config:
+                continue 
+
+            is_val_valid, processed_val = _is_value_valid_for_display(value)
+            if is_val_valid:
+                value_to_display_final = str(processed_val)
+        
+        if value_to_display_final is not None:
+            final_display_label = display_labels_config.get(key_for_display_lookup, 
+                                                             key_for_display_lookup.replace("_", " ").title())
+            
+            if final_display_label in labels_to_exclude_config:
+                continue
+
+            value_for_group = value_to_display_final 
+            if final_display_label == "Elektrischer Verbrauch WLTP":
+                parts_original_str = value_to_display_final.split(' - ')
+                formatted_wh_km_parts = []
+                formatted_kwh_100km_parts = []
+                formatted_km_kwh_parts = [] 
+                conversion_possible_for_all = True
+
+                for part_str in parts_original_str:
+                    try:
+                        val_numeric_wh_km = float(part_str)
+                        if val_numeric_wh_km == int(val_numeric_wh_km): formatted_wh_km_parts.append(str(int(val_numeric_wh_km)))
+                        else: formatted_wh_km_parts.append(f"{val_numeric_wh_km:.1f}")
+                        
+                        val_kwh_100km = val_numeric_wh_km / 10.0
+                        if val_kwh_100km == int(val_kwh_100km): formatted_kwh_100km_parts.append(str(int(val_kwh_100km)))
+                        else: formatted_kwh_100km_parts.append(f"{val_kwh_100km:.1f}")
+                        
+                        val_km_kwh = 1000.0 / val_numeric_wh_km if val_numeric_wh_km != 0 else 0 
+                        formatted_km_kwh_parts.append(f"{val_km_kwh:.1f}")
+                    except ValueError: 
+                        conversion_possible_for_all = False
+                        break 
+                
+                if conversion_possible_for_all:
+                    display_wh_km_str = " - ".join(formatted_wh_km_parts)
+                    display_kwh_100km_str = " - ".join(formatted_kwh_100km_parts)
+                    display_km_kwh_str = " - ".join(formatted_km_kwh_parts) 
+                    value_for_group = f"{display_wh_km_str} Wh/km | {display_kwh_100km_str} kWh/100km | {display_km_kwh_str} km/kWh"
+                else: 
+                    primary_unit = field_units_config.get(final_display_label) 
+                    if primary_unit: value_for_group = f"{value_to_display_final} {primary_unit}"
+            else: 
+                unit = field_units_config.get(final_display_label)
+                if unit:
+                    value_for_group = f"{value_to_display_final} {unit}"
+
+            group_name = data_groups_mapping_config.get(final_display_label)
+            if not group_name: 
+                key_lower = key_for_display_lookup.lower()
+                if "bemerkung" in key_lower: 
+                    group_name = "Bemerkungen"
+                else:
+                    group_name = "Sonstige Daten"
+            
+            if group_name not in grouped_data: 
+                grouped_data[group_name] = {}
+            grouped_data[group_name][final_display_label] = value_for_group
+    
+    final_ordered_groups = {}
+    for group_name_ordered in data_groups_order_config:
+        if group_name_ordered in grouped_data and grouped_data[group_name_ordered]:
+            final_ordered_groups[group_name_ordered] = grouped_data[group_name_ordered]
+    
+    return final_ordered_groups
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -296,137 +407,103 @@ def index():
                 error_message = f"An error occurred during the search: {e}"
                 app.logger.error(f"Search error: {e}", exc_info=True)
 
-    display_results = []
+    data_for_template = [] 
+
     if results_from_search:
-        for row_dict in results_from_search:
-            grouped_data = {group_name: {} for group_name in DATA_GROUPS_ORDER}
-            processed_db_keys = set()
-
-            for db_key, value in row_dict.items():
-                if db_key in processed_db_keys:
-                    continue
-
-                key_for_display_lookup = db_key
-                value_to_display_final = None 
-
-                if db_key.endswith("_von"):
-                    base_name = db_key[:-4]
-                    bis_key = base_name + "_bis"
-                    val_von = value
-                    val_bis = row_dict.get(bis_key)
-
-                    if bis_key in row_dict:
-                        processed_db_keys.add(bis_key)
-
-                    is_von_valid, processed_von = _is_value_valid_for_display(val_von)
-                    is_bis_valid, processed_bis = _is_value_valid_for_display(val_bis)
-
-                    if is_von_valid and is_bis_valid:
-                        str_von, str_bis = str(processed_von), str(processed_bis)
-                        value_to_display_final = str_von if str_von == str_bis else f"{str_von} - {str_bis}"
-                    elif is_von_valid:
-                        value_to_display_final = str(processed_von)
-                    elif is_bis_valid:
-                        value_to_display_final = str(processed_bis)
-                    key_for_display_lookup = base_name
-                else:
-                    # Check if it's a TG-Code field (e.g., "cars_tg_code")
-                    is_a_tg_code_field = STANDARDIZED_TG_CODE_COL in db_key 
-                    
-                    # Skip _id fields unless they are TG-Codes or explicitly in DISPLAY_LABELS
-                    if db_key.endswith("_id") and not is_a_tg_code_field and db_key not in DISPLAY_LABELS:
-                        continue 
-
-                    is_val_valid, processed_val = _is_value_valid_for_display(value)
-                    if is_val_valid:
-                        value_to_display_final = str(processed_val)
-                
-                if value_to_display_final is not None:
-                    final_display_label = DISPLAY_LABELS.get(key_for_display_lookup, 
-                                                             key_for_display_lookup.replace("_", " ").title())
-                    
-                    if final_display_label in LABELS_TO_EXCLUDE:
-                        continue
-
-                    value_for_group = value_to_display_final # Initialize with the base value string
-
-                    if final_display_label == "Elektrischer Verbrauch WLTP":
-                        parts_original_str = value_to_display_final.split(' - ')
-                        
-                        formatted_wh_km_parts = []
-                        formatted_kwh_100km_parts = []
-                        formatted_km_kwh_parts = [] # Changed for km/kWh
-                        conversion_possible_for_all = True
-
-                        for part_str in parts_original_str:
-                            try:
-                                val_numeric_wh_km = float(part_str)
-                                
-                                # Format Wh/km part
-                                if val_numeric_wh_km == int(val_numeric_wh_km):
-                                    formatted_wh_km_parts.append(str(int(val_numeric_wh_km)))
-                                else:
-                                    formatted_wh_km_parts.append(f"{val_numeric_wh_km:.1f}")
-
-                                # Calculate and format kWh/100km part
-                                val_kwh_100km = val_numeric_wh_km / 10.0
-                                if val_kwh_100km == int(val_kwh_100km):
-                                    formatted_kwh_100km_parts.append(str(int(val_kwh_100km)))
-                                else:
-                                    formatted_kwh_100km_parts.append(f"{val_kwh_100km:.1f}")
-
-                                # Calculate and format km/kWh part
-                                # _is_value_valid_for_display should prevent val_numeric_wh_km from being 0 here
-                                val_km_kwh = 1000.0 / val_numeric_wh_km if val_numeric_wh_km != 0 else 0 # Avoid division by zero
-                                formatted_km_kwh_parts.append(f"{val_km_kwh:.1f}")
-
-                            except ValueError:
-                                conversion_possible_for_all = False
-                                break 
-                        
-                        if conversion_possible_for_all:
-                            display_wh_km_str = " - ".join(formatted_wh_km_parts)
-                            display_kwh_100km_str = " - ".join(formatted_kwh_100km_parts)
-                            display_km_kwh_str = " - ".join(formatted_km_kwh_parts) # Changed variable name
-                            value_for_group = f"{display_wh_km_str} Wh/km | {display_kwh_100km_str} kWh/100km | {display_km_kwh_str} km/kWh" # Changed unit label
-                        else: # Fallback if conversion failed (e.g., value was "N/A")
-                            primary_unit = FIELD_UNITS.get(final_display_label) # Should be "Wh/km"
-                            if primary_unit:
-                                value_for_group = f"{value_to_display_final} {primary_unit}"
-                    else: # Generic unit addition for other fields
-                        unit = FIELD_UNITS.get(final_display_label)
-                        if unit:
-                            value_for_group = f"{value_to_display_final} {unit}"
-
-                    group_name = DATA_GROUPS_MAPPING.get(final_display_label) # Grouping based on label
-                    if not group_name: # Fallback if the final_display_label is not in DATA_GROUPS_MAPPING
-                        key_lower = key_for_display_lookup.lower()
-                        if "bemerkung" in key_lower: # Catches "bemerkungen_zX_value" and "emissions_bemerkung_value"
-                            group_name = "Bemerkungen"
-                        else:
-                            group_name = "Sonstige Daten"
-                    
-                    if group_name not in grouped_data: # Should be pre-filled by DATA_GROUPS_ORDER
-                        # This ensures that if a new group name is derived, it can still be added,
-                        # though it might not respect DATA_GROUPS_ORDER if the group isn't in it.
-                        # It's best if DATA_GROUPS_ORDER contains all possible group names.
-                        grouped_data[group_name] = {} # Ensure group dict exists
-                    grouped_data[group_name][final_display_label] = value_for_group
-            
-            # Custom reordering for "Fahrzeug" group removed as items moved to "Sitze & Türen"
-            ordered_single_result_groups = {
-                group: grouped_data[group]
-                for group in DATA_GROUPS_ORDER 
-                if group in grouped_data and grouped_data[group]
-            }
-            if ordered_single_result_groups:
-                display_results.append(ordered_single_result_groups)
+        if len(results_from_search) == 1:
+            processed_single_result = _process_single_car_result(
+                results_from_search[0],
+                DISPLAY_LABELS, 
+                DATA_GROUPS_ORDER, 
+                DATA_GROUPS_MAPPING, 
+                FIELD_UNITS, 
+                LABELS_TO_EXCLUDE,
+                STANDARDIZED_TG_CODE_COL 
+            )
+            if processed_single_result: 
+                data_for_template.append(processed_single_result)
+        else: 
+            data_for_template = results_from_search
 
     return render_template('search_results.html', 
-                           results=display_results, 
+                           results=data_for_template, 
                            search_performed=search_performed,
                            error_message=error_message,
-                           data_groups_order=DATA_GROUPS_ORDER) # Pass order to template
+                           data_groups_order=DATA_GROUPS_ORDER) 
+
+@app.route('/autocomplete/marken')
+def autocomplete_marken():
+    term = request.args.get('term', '')
+    if not term or len(term) < 1: 
+        return jsonify([])
+
+    marke_lookup_table = COLUMNS_TO_NORMALIZE_CONFIG.get("cars", {}).get("col_04_marke")
+    if not marke_lookup_table:
+        app.logger.error("Lookup table for 'col_04_marke' not defined in config.")
+        return jsonify({"error": "Server configuration error for marken autocomplete"}), 500
+
+    suggestions = []
+    try:
+        conn = sqlite3.connect(DATABASE_PATH)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        
+        query = f"SELECT DISTINCT value FROM \"{marke_lookup_table}\" WHERE value LIKE ? ORDER BY value LIMIT 10"
+        cursor.execute(query, (f'{term}%',)) 
+        
+        suggestions = [row['value'] for row in cursor.fetchall()]
+        conn.close()
+    except Exception as e:
+        app.logger.error(f"Error in /autocomplete/marken: {e}")
+        return jsonify({"error": "Database error during marken autocomplete"}), 500
+        
+    return jsonify(suggestions)
+
+@app.route('/autocomplete/typen')
+def autocomplete_typen():
+    term = request.args.get('term', '')
+    marke_value_filter = request.args.get('marke', None) 
+
+    if not term or len(term) < 1: 
+        return jsonify([])
+
+    typ_lookup_table = COLUMNS_TO_NORMALIZE_CONFIG.get("cars", {}).get("col_04_typ")
+    marke_lookup_table = COLUMNS_TO_NORMALIZE_CONFIG.get("cars", {}).get("col_04_marke")
+    cars_table_name = "cars" 
+
+    if not typ_lookup_table or (marke_value_filter and not marke_lookup_table):
+        app.logger.error("Lookup table for typ or marke (if filtering) not defined in config.")
+        return jsonify({"error": "Server configuration error for typen autocomplete"}), 500
+
+    suggestions = []
+    try:
+        conn = sqlite3.connect(DATABASE_PATH)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        
+        query_params = [f'{term}%']
+        
+        if marke_value_filter and marke_value_filter.strip():
+            query = f"""
+                SELECT DISTINCT typ_lkp.value
+                FROM "{typ_lookup_table}" typ_lkp
+                JOIN "{cars_table_name}" c ON c.col_04_typ_id = typ_lkp.id
+                JOIN "{marke_lookup_table}" marke_lkp ON c.col_04_marke_id = marke_lkp.id
+                WHERE typ_lkp.value LIKE ? AND marke_lkp.value = ?
+                ORDER BY typ_lkp.value
+                LIMIT 10
+            """
+            query_params.append(marke_value_filter)
+        else: 
+            query = f"SELECT DISTINCT value FROM \"{typ_lookup_table}\" WHERE value LIKE ? ORDER BY value LIMIT 10"
+
+        cursor.execute(query, tuple(query_params))
+        suggestions = [row['value'] for row in cursor.fetchall()]
+        conn.close()
+    except Exception as e:
+        app.logger.error(f"Error in /autocomplete/typen: {e}")
+        return jsonify({"error": "Database error during typen autocomplete"}), 500
+    return jsonify(suggestions)
 
 if __name__ == '__main__':
     app.run(debug=True)

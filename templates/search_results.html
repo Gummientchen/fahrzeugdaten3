@@ -1,108 +1,331 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Car Data Search</title>
     <style>
-        body { font-family: sans-serif; margin: 20px; background-color: #f4f4f4; color: #333; }
-        .container { background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        h1 { color: #333; text-align: center; margin-bottom: 30px;}
-        h2 { color: #333; margin-top: 30px; }
-        form label { display: block; margin-top: 10px; font-weight: bold; }
-        form input[type="text"], form input[type="number"] { width: calc(100% - 22px); padding: 10px; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
-        form input[type="submit"] { background-color: #5cb85c; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; margin-top: 20px; font-size: 1em; }
-        form input[type="submit"]:hover { background-color: #4cae4c; }
-        .results-summary { margin-top: 20px; padding: 10px; background-color: #e9e9e9; border-left: 5px solid #5cb85c; }
-        .car-list { list-style-type: none; padding: 0; }
-        .car-list li { background-color: #f9f9f9; border: 1px solid #eee; margin-top: 10px; padding: 15px; border-radius: 4px; }
-        .table-responsive-wrapper {
-            overflow-x: auto; /* Enables horizontal scrolling if content is wider */
-            max-width: 100%;   /* Ensures the wrapper doesn't exceed its container */
-            margin-top: 5px; /* Reduced margin from group title */
-            margin-bottom: 20px; /* Space after each table group */
-        }
-        .car-details-table { /* width: 100%; removed */ border-collapse: collapse; min-width: 500px; /* Optional: set a min-width so it doesn't get too squished */ }
-        .car-details-table th, .car-details-table td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
-            vertical-align: top;
-        }
-        .car-details-table th { background-color: #f2f2f2; font-weight: bold; color: #555; width: 30%; } /* Key column */
-        .group-title { margin-top: 25px; margin-bottom: 10px; color: #337ab7; border-bottom: 2px solid #eee; padding-bottom: 5px; font-size: 1.4em;}
-        .error { color: red; font-weight: bold; margin-top: 15px; }
-        .info { color: #31708f; background-color: #d9edf7; border-color: #bce8f1; padding: 10px; border-radius: 4px; margin-top:15px;}
+      body {
+        font-family: sans-serif;
+        margin: 20px;
+        background-color: #f4f4f4;
+      }
+      .container {
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 5px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+      .search-form {
+        margin-bottom: 20px;
+      }
+      .search-form label {
+        display: inline-block;
+        width: 150px; /* Adjust as needed */
+        margin-bottom: 5px;
+        vertical-align: middle; /* Align with input */
+      }
+      .search-form input[type="text"] {
+        padding: 8px;
+        margin-bottom: 10px;
+        border: 1px solid #ccc;
+        border-radius: 3px;
+        width: 250px; /* Adjust as needed */
+        vertical-align: middle; /* Align with input */
+      }
+      .search-form input[type="submit"] {
+        padding: 10px 15px;
+        background-color: #5cb85c;
+        color: white;
+        border: none;
+        border-radius: 3px;
+        cursor: pointer;
+      }
+      .search-form input[type="submit"]:hover {
+        background-color: #4cae4c;
+      }
+      .results-count,
+      .error-message,
+      .no-results-message {
+        margin-bottom: 15px;
+        padding: 10px;
+        border-radius: 3px;
+      }
+      .results-count {
+        background-color: #dff0d8;
+        border: 1px solid #d6e9c6;
+        color: #3c763d;
+      }
+      .error-message {
+        background-color: #f2dede;
+        border: 1px solid #ebccd1;
+        color: #a94442;
+      }
+      .no-results-message {
+        background-color: #fcf8e3;
+        border: 1px solid #faebcc;
+        color: #8a6d3b;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+      }
+      th,
+      td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: left;
+      }
+      th {
+        background-color: #f0f0f0;
+      }
+      .group-title {
+        font-size: 1.2em;
+        font-weight: bold;
+        margin-top: 20px;
+        margin-bottom: 10px;
+        padding-bottom: 5px;
+        border-bottom: 2px solid #eee;
+      }
+      .multiple-results-list {
+        list-style-type: none; /* Remove bullet points */
+        padding-left: 0; /* Remove default padding for ul */
+      }
+      .multiple-results-list li {
+        margin-bottom: 5px;
+        padding: 5px;
+        border-radius: 3px;
+        /* New styles for card-like appearance */
+        background-color: #f9f9f9;
+        border: 1px solid #eee;
+        padding: 10px 15px;
+        margin-bottom: 10px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      }
+      .multiple-results-list li div {
+        margin-bottom: 5px; /* Space between data lines in the card */
+      }
+      .form-field-container {
+        position: relative;
+        margin-bottom: 10px; /* Match original input margin + <br> effect */
+      }
+      .autocomplete-suggestions {
+        border: 1px solid #ccc;
+        border-top: none;
+        max-height: 150px;
+        overflow-y: auto;
+        position: absolute;
+        background-color: white;
+        z-index: 1000;
+        /* Make suggestions box align under and match width of the input field */
+        width: 250px; /* Should match the width of #marke_input and #typ_input */
+        left: 150px; /* Should be approx the width of the label to align under input */
+        /* If label width is 150px, and input is directly next to it. */
+        box-sizing: border-box;
+        display: none; /* Initially hidden */
+      }
+      .autocomplete-suggestions div {
+        padding: 8px;
+        cursor: pointer;
+      }
+      .autocomplete-suggestions div:hover {
+        background-color: #f0f0f0;
+      }
+      .form-field-container input[type="text"] {
+        margin-bottom: 0; /* Override general margin, space is now handled by container's margin-bottom */
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div class="container">
-        <h1>Car Data Search</h1>
-        <form method="POST">
-            <label for="tg_code">TG-Code:</label>
-            <input type="text" id="tg_code" name="tg_code" value="{{ request.form.tg_code or '' }}">
+      <h1>Car Data Search</h1>
 
-            <label for="marke">Marke (Brand - fuzzy search):</label>
-            <input type="text" id="marke" name="marke" value="{{ request.form.marke or '' }}">
+      <div class="search-form">
+        <form method="POST" action="/">
+          <label for="tg_code_input">TG-Code:</label>
+          <!-- Changed id to tg_code_input for consistency -->
+          <input
+            type="text"
+            name="tg_code"
+            id="tg_code_input"
+            value="{{ request.form.tg_code }}"
+          /><br />
 
-            <label for="typ">Typ (Model - fuzzy search):</label>
-            <input type="text" id="typ" name="typ" value="{{ request.form.typ or '' }}">
-            
-            <label for="marke_id">Marke ID (Exact):</label>
-            <input type="number" id="marke_id" name="marke_id" value="{{ request.form.marke_id or '' }}">
+          <div class="form-field-container">
+            <label for="marke_input">Marke (fuzzy):</label>
+            <input
+              type="text"
+              name="marke"
+              id="marke_input"
+              value="{{ request.form.marke }}"
+              autocomplete="off"
+            />
+            <div id="marke_suggestions" class="autocomplete-suggestions"></div>
+          </div>
 
-            <label for="typ_id">Typ ID (Exact):</label>
-            <input type="number" id="typ_id" name="typ_id" value="{{ request.form.typ_id or '' }}">
+          <div class="form-field-container">
+            <label for="typ_input">Typ (fuzzy):</label>
+            <input
+              type="text"
+              name="typ"
+              id="typ_input"
+              value="{{ request.form.typ }}"
+              autocomplete="off"
+            />
+            <div id="typ_suggestions" class="autocomplete-suggestions"></div>
+          </div>
 
-            <input type="submit" value="Search">
+          <!-- Removed the <br> here as form-field-container handles spacing -->
+
+          <input type="submit" value="Search" />
         </form>
+      </div>
 
-        {% if search_performed %}
-            <div class="results-summary">
-                Found {{ results|length }} result(s).
-            </div>
+      {% if error_message %}
+      <div class="error-message">{{ error_message }}</div>
+      {% endif %} {% if search_performed and not error_message %} {% if results
+      %}
+      <div class="results-count">Found {{ results|length }} result(s).</div>
 
-            {% if results %}
-                {% if results|length == 1 %}
-                    <h2>Search Result Details:</h2>
-                    {% set car_data_grouped = results[0] %}
-                    {% for group_name in car_data_grouped.keys() %} {# Iterate in the order they appear in the dict #}
-                        {% if car_data_grouped[group_name] %} {# Only show group if it has data #}
-                            <h3 class="group-title">{{ group_name }}</h3>
-                            <div class="table-responsive-wrapper">
-                                <table class="car-details-table">
-                                    <tbody>
-                                    {% for key, value in car_data_grouped[group_name].items() %}
-                                        <tr>
-                                            <th>{{ key }}</th>
-                                            <td>{{ value }}</td>
-                                        </tr>
-                                    {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
-                        {% endif %}
-                    {% endfor %}
-                {% else %} {# Multiple car results #}
-                    <h2>Multiple Cars Found:</h2>
-                    <p class="info">Please refine your search using a specific TG-Code from the list below, or use more precise Marke/Typ ID.</p>
-                    <ul class="car-list">
-                        {% for car in results %}
-                        <li>
-                            <strong>TG-Code:</strong> {{ car.get('Fahrzeug', {}).get('TG-Code (Typengenehmigungsnummer)', 'N/A') }}<br>
-                            <strong>Marke:</strong> {{ car.get('Fahrzeug', {}).get('Marke', 'N/A') }}<br>
-                            <strong>Typ:</strong> {{ car.get('Fahrzeug', {}).get('Typ', 'N/A') }}
-                        </li>
-                        {% endfor %}
-                    </ul>
-                {% endif %}
-            {% elif not error_message %}
-                <p>No results found for your criteria.</p>
-            {% endif %}
-        {% endif %}
-        {% if error_message %}
-            <p class="error">{{ error_message }}</p>
-        {% endif %}
+      {% if results|length == 1 %} {% set car_data_grouped = results[0] %}
+      <h2>Car Details</h2>
+      {% for group_name in data_groups_order %} {% if group_name in
+      car_data_grouped and car_data_grouped[group_name] %}
+      <div class="group-title">{{ group_name }}</div>
+      <div style="overflow-x: auto">
+        <!-- For responsive tables -->
+        <table>
+          {% for key, value in car_data_grouped[group_name].items() %}
+          <tr>
+            <td>{{ key }}</td>
+            <td>{{ value }}</td>
+          </tr>
+          {% endfor %}
+        </table>
+      </div>
+      {% endif %} {% endfor %} {% else %} {# Multiple results #}
+      <h2>Multiple Results Found</h2>
+      <p>
+        Please refine your search, possibly by using a specific TG-Code from the
+        list below or by using the exact Marke ID / Typ ID.
+      </p>
+      <ul class="multiple-results-list">
+        {% for car_summary in results %} {# These keys must match what search.py
+        returns for multiple results (raw dict from DB) #}
+        <li>
+          <div>
+            <strong>TG-Code:</strong> {{ car_summary.get('cars_tg_code', 'N/A')
+            }}
+          </div>
+          <div>
+            <strong>Marke:</strong> {{
+            car_summary.get('cars_col_04_marke_value', 'N/A') }}
+          </div>
+          <div>
+            <strong>Typ:</strong> {{ car_summary.get('cars_col_04_typ_value',
+            'N/A') }}
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+      {% endif %} {% else %}
+      <div class="no-results-message">No results found for your criteria.</div>
+      {% endif %} {% endif %}
+
+      <script>
+        function setupAutocomplete(
+          inputId,
+          suggestionsId,
+          endpointUrl,
+          isTypField = false
+        ) {
+          const inputField = document.getElementById(inputId);
+          const suggestionsContainer = document.getElementById(suggestionsId);
+          let debounceTimer;
+
+          inputField.addEventListener("input", function () {
+            clearTimeout(debounceTimer);
+            const term = this.value;
+
+            debounceTimer = setTimeout(async () => {
+              suggestionsContainer.innerHTML = ""; // Clear previous suggestions
+              suggestionsContainer.style.display = "none";
+
+              if (term.length < 1) {
+                // Minimum characters to trigger autocomplete
+                return;
+              }
+
+              let currentEndpointUrl = `${endpointUrl}?term=${encodeURIComponent(
+                term
+              )}`;
+              if (isTypField) {
+                const markeValue = document.getElementById("marke_input").value;
+                if (markeValue && markeValue.trim()) {
+                  // Ensure markeValue is not empty and not just whitespace
+                  currentEndpointUrl += `&marke=${encodeURIComponent(
+                    markeValue.trim()
+                  )}`;
+                }
+              }
+
+              try {
+                const response = await fetch(currentEndpointUrl);
+                if (!response.ok) {
+                  console.error(
+                    "Autocomplete fetch error:",
+                    response.status,
+                    response.statusText
+                  );
+                  return;
+                }
+                const suggestions = await response.json();
+
+                if (suggestions.length > 0) {
+                  suggestionsContainer.style.display = "block";
+                  suggestions.forEach((suggestion) => {
+                    const div = document.createElement("div");
+                    div.textContent = suggestion;
+                    div.addEventListener("click", function () {
+                      inputField.value = suggestion;
+                      suggestionsContainer.innerHTML = "";
+                      suggestionsContainer.style.display = "none";
+                    });
+                    suggestionsContainer.appendChild(div);
+                  });
+                }
+              } catch (error) {
+                console.error("Autocomplete request failed:", error);
+              }
+            }, 250); // 250ms debounce delay
+          });
+
+          document.addEventListener("click", function (event) {
+            if (
+              !inputField.contains(event.target) &&
+              !suggestionsContainer.contains(event.target)
+            ) {
+              suggestionsContainer.innerHTML = "";
+              suggestionsContainer.style.display = "none";
+            }
+          });
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+          setupAutocomplete(
+            "marke_input",
+            "marke_suggestions",
+            "/autocomplete/marken"
+          );
+          setupAutocomplete(
+            "typ_input",
+            "typ_suggestions",
+            "/autocomplete/typen",
+            true
+          ); // Pass true for isTypField
+        });
+      </script>
     </div>
-</body>
+  </body>
 </html>
