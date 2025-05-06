@@ -128,10 +128,9 @@ th {
   position: absolute;
   background-color: white;
   z-index: 1000;
-  /* Make suggestions box align under and match width of the input field */
-  width: 250px; /* Should match the width of #marke_input and #typ_input */
-  left: 150px; /* Should be approx the width of the label to align under input */
-  /* If label width is 150px, and input is directly next to it. */
+  /* Mobile-first: suggestions align with input, assuming input starts at left of its line */
+  width: 250px; /* Match the input field's width */
+  left: 0;
   box-sizing: border-box;
   display: none; /* Initially hidden */
 }
@@ -223,4 +222,12 @@ th {
 }
 .search-history-dropdown li:hover {
   background-color: #f0f0f0;
+}
+
+/* Desktop overrides for autocomplete suggestions positioning */
+@media (min-width: 480px) {
+  /* Adjust this breakpoint as needed */
+  .autocomplete-suggestions {
+    left: 150px; /* Offset by the label's width when label is side-by-side with input */
+  }
 }
