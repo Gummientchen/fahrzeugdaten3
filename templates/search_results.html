@@ -106,6 +106,10 @@
       .multiple-results-list li div {
         margin-bottom: 5px; /* Space between data lines in the card */
       }
+      .clickable-tg-code {
+        cursor: pointer;
+        color: #007bff; /* Make it look like a link */
+      }
       .form-field-container {
         position: relative;
         margin-bottom: 10px; /* Match original input margin + <br> effect */
@@ -214,9 +218,12 @@
         {% for car_summary in results %} {# These keys must match what search.py
         returns for multiple results (raw dict from DB) #}
         <li>
-          <div>
-            <strong>TG-Code:</strong> {{ car_summary.get('cars_tg_code', 'N/A')
-            }}
+          <div
+            class="clickable-tg-code"
+            data-tgcode="{{ car_summary.get('cars_tg_code', '') }}"
+          >
+            <strong>TG-Code:</strong>
+            {{ car_summary.get('cars_tg_code', 'N/A') }}
           </div>
           <div>
             <strong>Marke:</strong> {{
@@ -324,6 +331,36 @@
             "/autocomplete/typen",
             true
           ); // Pass true for isTypField
+
+          // Handle clicks on TG-Codes in multiple results
+          const multipleResultsList = document.querySelector(
+            ".multiple-results-list"
+          );
+          if (multipleResultsList) {
+            multipleResultsList.addEventListener("click", function (event) {
+              let targetElement = event.target;
+              // Traverse up if the click was on the <strong> or text node inside the div
+              while (
+                targetElement != null &&
+                !targetElement.classList.contains("clickable-tg-code")
+              ) {
+                targetElement = targetElement.parentElement;
+              }
+
+              if (
+                targetElement &&
+                targetElement.classList.contains("clickable-tg-code")
+              ) {
+                const tgCode = targetElement.dataset.tgcode;
+                if (tgCode) {
+                  document.getElementById("tg_code_input").value = tgCode;
+                  document.getElementById("marke_input").value = ""; // Clear Marke field
+                  document.getElementById("typ_input").value = ""; // Clear Typ field
+                  document.querySelector(".search-form form").submit();
+                }
+              }
+            });
+          }
         });
       </script>
     </div>
