@@ -20,10 +20,15 @@ from display_config import (
 try:
     # Assuming main_importer_logic is the function that does the full import
     from importer import main_importer_logic as run_full_import 
-except ImportError:
-    logging.getLogger(__name__).error("Could not import 'main_importer_logic' from importer.py. Ensure it exists.")
-    def run_full_import(): # Placeholder if import fails
-        logging.getLogger(__name__).error("Importer script function 'main_importer_logic' is not available.")
+except ImportError as e_initial_import: # Catch the specific error
+    # Log the actual ImportError to get more details about why the import failed
+    logging.getLogger(__name__).error(
+        f"CRITICAL: Failed to import 'main_importer_logic' from importer.py during initial app load. Specific error: {e_initial_import}",
+        exc_info=True # This will include the full traceback of the ImportError
+    )
+    def run_full_import_placeholder(): # Placeholder if import fails
+        logging.getLogger(__name__).error("Placeholder Importer: Importer script function 'main_importer_logic' is not available due to earlier import failure.")
+    run_full_import = run_full_import_placeholder # Assign the placeholder
 
 
 app = Flask(__name__)
@@ -182,7 +187,7 @@ def index():
         # Removed marke_id and typ_id from form, so these will be None
         col_04_marke_id = None
         col_04_typ_id = None
-        tg_code = tg_code_input if tg_code_input and tg_code_input.strip() else None
+        tg_code = tg_code_input.strip().upper() if tg_code_input and tg_code_input.strip() else None
         marke_str = marke_str_input if marke_str_input and marke_str_input.strip() else None
         typ_str = typ_str_input if typ_str_input and typ_str_input.strip() else None
 

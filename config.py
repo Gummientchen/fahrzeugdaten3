@@ -4,14 +4,14 @@ import os
 # --- Base Paths ---
 BASE_DIR = Path(__file__).resolve().parent
 DATA_DIR = BASE_DIR / "data"
-DATABASE_DIR = BASE_DIR / "database"
-DATABASE_PATH = os.getenv('DATABASE_PATH', os.path.join(DATA_DIR, "fahrzeugdaten.db"))
+DATABASE_DIR = BASE_DIR / "database" # This is correct
+DATABASE_PATH = Path(os.getenv('DATABASE_PATH', DATABASE_DIR / "data.db")) # Ensure it's a Path object
 
 # Ensure the directory for the database exists, especially if DATABASE_PATH is absolute
-db_dir = os.path.dirname(DATABASE_PATH)
+db_dir = os.path.dirname(str(DATABASE_PATH)) # Convert to string for os.path.dirname
 if db_dir and not os.path.exists(db_dir): # Check if db_dir is not empty (for relative paths)
     os.makedirs(db_dir, exist_ok=True)
-    print(f"Created database directory: {db_dir}") # For visibility
+    print(f"Config: Created database directory: {db_dir}") # For visibility
 
 # --- TG-Code Configuration ---
 TG_CODE_COLUMN_NAMES = ["TG-Code", "Typengenehmigungsnummer"]

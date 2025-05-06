@@ -7,7 +7,8 @@ import logger
 import utils
 import downloader
 import db_manager
-import importer
+# import importer # REMOVE THIS - CAUSES CIRCULAR DEPENDENCY
+from data_importer import import_data_to_db # IMPORT THE CORRECT FUNCTION
 
 def main_import_process():
     logger.log_message(logger.LOG_LEVEL_INFO, "Starting the data import process...")
@@ -40,7 +41,8 @@ def main_import_process():
         lookup_caches = defaultdict(dict)
         
         for file_conf in sorted_files:
-            importer.import_single_file_data(db_conn, file_conf, config.DATA_DIR, primary_ref_table_name, config.COLUMNS_TO_NORMALIZE_CONFIG, lookup_caches)
+            # Call the imported function directly
+            import_data_to_db(db_conn, file_conf, config.DATA_DIR, primary_ref_table_name, config.COLUMNS_TO_NORMALIZE_CONFIG, lookup_caches)
         
         logger.log_message(logger.LOG_LEVEL_INFO, "\nData import process finished successfully!")
 
