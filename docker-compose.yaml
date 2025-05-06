@@ -1,0 +1,21 @@
+version: "3.8" # Specifies the Docker Compose file format version
+
+services:
+  web:
+    image: fahrzeugdaten-app:latest
+    container_name: fahrzeugdaten_web_app # A friendly name for your container
+    ports:
+      - "8012:8000" # Maps port 8012 on your host machine to port 8000 in the container
+    volumes:
+      - fahrzeugdaten_db_volume:/app/database # Mounts the named volume to /app/database in the container
+      - fahrzeugdaten_data_volume:/app/data # Mounts the named volume to /app/database in the container
+    # Environment variables are already set in your Dockerfile,
+    # but you could override or add more here if needed, e.g.:
+    # environment:
+    #   - FLASK_ENV=production # Example
+
+volumes:
+  fahrzeugdaten_db_volume: # Defines the named volume for persisting the database
+    driver: local # Specifies the local driver for the volume (default)
+  fahrzeugdaten_data_volume: # Defines the named volume for persisting the database
+    driver: local # Specifies the local driver for the volume (default)
