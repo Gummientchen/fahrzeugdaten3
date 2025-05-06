@@ -198,6 +198,47 @@
         display: none; /* Hidden by default */
         overflow: hidden;
       }
+      /* Search History Styles */
+      #search_history_btn {
+        padding: 8px 12px;
+        margin-left: 10px; /* Space next to Search button */
+        background-color: #6c757d; /* A neutral color */
+        color: white;
+        border: none;
+        border-radius: 3px;
+        cursor: pointer;
+        vertical-align: middle; /* Align with other form elements */
+      }
+      #search_history_btn:hover {
+        background-color: #5a6268;
+      }
+      .search-history-dropdown {
+        position: absolute;
+        background-color: white;
+        border: 1px solid #ccc;
+        z-index: 1001; /* Above autocomplete */
+        max-height: 250px;
+        overflow-y: auto;
+        width: 300px; /* Adjust as needed */
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+        margin-top: 5px; /* Space below the button row */
+      }
+      .search-history-dropdown ul {
+        list-style-type: none;
+        padding: 0;
+        margin: 0;
+      }
+      .search-history-dropdown li {
+        padding: 8px 12px;
+        cursor: pointer;
+        border-bottom: 1px solid #eee;
+      }
+      .search-history-dropdown li:last-child {
+        border-bottom: none;
+      }
+      .search-history-dropdown li:hover {
+        background-color: #f0f0f0;
+      }
     </style>
   </head>
   <body>
@@ -242,6 +283,14 @@
           <!-- Removed the <br> here as form-field-container handles spacing -->
 
           <input type="submit" value="Search" />
+          <button type="button" id="search_history_btn">Search History</button>
+          <div
+            id="search_history_container"
+            class="search-history-dropdown"
+            style="display: none"
+          >
+            <ul id="search_history_list"></ul>
+          </div>
         </form>
       </div>
 
@@ -257,7 +306,7 @@
       car_data_grouped and car_data_grouped[group_name] %}
       <button class="accordion-header">{{ group_name }}</button>
       <div class="accordion-panel">
-        <div style="overflow-x: auto; padding: 15px 0">
+        <div style="overflow-x: auto; padding: 15px 15px 15px 0">
           <!-- For responsive tables & panel content padding -->
           <table>
             {% for key, value in car_data_grouped[group_name].items() %}
@@ -304,6 +353,128 @@
       {% endif %} {% endif %}
 
       <script>
+        // SCRIPT BLOCK 1: GLOBAL DEFINITIONS FOR HISTORY - MUST BE BEFORE EMBEDDED SCRIPT
+        const MAX_HISTORY_ITEMS = 10;
+        const HISTORY_COOKIE_NAME = "carSearchHistory";
+
+        function setCookie(name, value, days) {
+          let expires = "";
+          if (days) {
+            const date = new Date();
+            date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
+            expires = "; expires=" + date.toUTCString();
+          }
+          document.cookie =
+            name + "=" + (value || "") + expires + "; path=/; SameSite=Lax";
+        }
+
+        function getCookie(name) {
+          const nameEQ = name + "=";
+          const ca = document.cookie.split(";");
+          for (let i = 0; i < ca.length; i++) {
+            let c = ca[i];
+            while (c.charAt(0) === " ") c = c.substring(1, c.length);
+            if (c.indexOf(nameEQ) === 0)
+              return c.substring(nameEQ.length, c.length);
+          }
+          return null;
+        }
+
+        window.addSearchToHistory = function (tgCode, displayName) {
+          if (!tgCode || !displayName) return;
+          let history = [];
+          const savedHistory = getCookie(HISTORY_COOKIE_NAME); // Uses global getCookie
+          if (savedHistory) {
+            try {
+              history = JSON.parse(savedHistory);
+            } catch (e) {
+              console.error(
+                "Error parsing search history cookie in addSearchToHistory",
+                e
+              );
+              history = [];
+            }
+          }
+          history = history.filter((item) => item.tgCode !== tgCode);
+          history.unshift({ tgCode: tgCode, display: displayName });
+          if (history.length > MAX_HISTORY_ITEMS) {
+            history = history.slice(0, MAX_HISTORY_ITEMS);
+          }
+          setCookie(HISTORY_COOKIE_NAME, JSON.stringify(history), 180); // Uses global setCookie
+        };
+      </script>
+
+      {% if results and results|length == 1 %} {# This script block will only be
+      rendered if a single car result is displayed #} {# It's used to add the
+      current car to the search history #}
+      <script>
+        document.addEventListener('DOMContentLoaded', function() {
+          console.log("History Saver (Embedded Script): DOMContentLoaded fired."); // Log 1: Is this script block running?
+
+          console.log("History Saver (Embedded Script): typeof addSearchToHistory:", typeof addSearchToHistory); // Log 2: Is the function defined?
+          console.log("History Saver (Embedded Script): window.addSearchToHistory:", window.addSearchToHistory); // Log 3: What is it?
+
+          // Ensure addSearchToHistory is defined (it will be later in the main script block)
+          if (typeof window.addSearchToHistory === 'function') { // Explicitly check window object
+            console.log("History Saver (Embedded Script): addSearchToHistory IS a function. Proceeding..."); // Log 4
+            const carDataForHistory = {{ car_data_grouped|tojson|safe }}; // Use |safe with |tojson
+            const groupOrderForHistory = {{ data_groups_order|tojson|safe }}; // Use |safe with |tojson
+
+            let tgCodeForHistory = "";
+            let markeForHistory = "";
+            let typForHistory = "";
+
+            // Use the actual labels passed from Flask. |tojson handles special chars like &shy; -> \u00AD
+            const actualTgCodeLabelJS = {{ actual_tg_code_label|tojson|safe }};
+            const actualMarkeLabelJS = {{ actual_marke_label|tojson|safe }};
+            const actualTypLabelJS = {{ actual_typ_label|tojson|safe }};
+
+            console.log("History Saver (Embedded Script): Expected TG Label:", actualTgCodeLabelJS); // Log 5
+            console.log("History Saver (Embedded Script): Expected Marke Label:", actualMarkeLabelJS); // Log 6
+            console.log("History Saver (Embedded Script): Expected Typ Label:", actualTypLabelJS); // Log 7
+            // console.log("History Saver (Embedded Script): Full Car Data:", JSON.stringify(carDataForHistory, null, 2)); // Uncomment for very detailed debugging
+
+            for (const groupName of groupOrderForHistory) {
+                if (carDataForHistory[groupName]) {
+                    const group = carDataForHistory[groupName];
+                    // console.log("History Saver (Embedded Script): Checking group:", groupName, group); // Uncomment for group-level debugging
+                    // Use the dynamic labels for lookup
+                    if (group[actualTgCodeLabelJS] && !tgCodeForHistory) {
+                        // TG-Code itself should not have units, but let's be safe and split by space
+                        // in case it's a string that somehow got a unit or extra info.
+                        tgCodeForHistory = String(group[actualTgCodeLabelJS]).split(" ")[0];
+                        console.log("History Saver (Embedded Script): Found TG Code:", tgCodeForHistory); // Log 8
+                    }
+                    if (group[actualMarkeLabelJS] && !markeForHistory) {
+                        markeForHistory = String(group[actualMarkeLabelJS]); // Marke usually doesn't have units
+                        console.log("History Saver (Embedded Script): Found Marke:", markeForHistory); // Log 9
+                    }
+                    if (group[actualTypLabelJS] && !typForHistory) {
+                        typForHistory = String(group[actualTypLabelJS]); // Typ usually doesn't have units
+                        console.log("History Saver (Embedded Script): Found Typ:", typForHistory); // Log 10
+                    }
+                }
+            }
+
+            console.log("History Saver (Embedded Script): Extracted - TG:", tgCodeForHistory, "Marke:", markeForHistory, "Typ:", typForHistory); // Log 11
+
+            if (tgCodeForHistory) {
+                let displayNameForHistory = ((markeForHistory || "") + " " + (typForHistory || "")).trim();
+                displayNameForHistory = displayNameForHistory ? `${displayNameForHistory} (${tgCodeForHistory})` : `TG: ${tgCodeForHistory}`;
+                console.log("History Saver (Embedded Script): Adding to history with DisplayName:", displayNameForHistory, "and TGCode:", tgCodeForHistory); // Log 12
+                window.addSearchToHistory(tgCodeForHistory, displayNameForHistory); // Call the global function
+            } else {
+                console.warn("History Saver (Embedded Script): No TG Code found for the current car. Not adding to history."); // Log 13
+            }
+          } else {
+            console.error("History Saver (Embedded Script): addSearchToHistory is NOT a function or not defined on window."); // Log 14
+          }
+        });
+      </script>
+      {% endif %}
+
+      <script>
+        // SCRIPT BLOCK 2: DOM MANIPULATION AND EVENT LISTENERS
         function setupAutocomplete(
           inputId,
           suggestionsId,
@@ -395,28 +566,50 @@
             true
           ); // Pass true for isTypField
 
-          // Cookie helper functions
-          function setCookie(name, value, days) {
-            let expires = "";
-            if (days) {
-              const date = new Date();
-              date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
-              expires = "; expires=" + date.toUTCString();
+          // Search History display logic (uses global getCookie)
+          // addSearchToHistory is now globally defined in the script block above the embedded script
+
+          function displaySearchHistory() {
+            const historyList = document.getElementById("search_history_list");
+            historyList.innerHTML = ""; // Clear previous items
+            const savedHistory = getCookie(HISTORY_COOKIE_NAME);
+            let historyItems = []; // Initialize as empty array
+
+            if (savedHistory) {
+              try {
+                historyItems = JSON.parse(savedHistory);
+              } catch (e) {
+                console.error(
+                  "Error parsing search history cookie for display",
+                  e
+                );
+                historyItems = []; // Reset to empty on error if parsing fails
+              }
             }
-            document.cookie =
-              name + "=" + (value || "") + expires + "; path=/; SameSite=Lax";
-          }
-          function getCookie(name) {
-            const nameEQ = name + "=";
-            const ca = document.cookie.split(";");
-            for (let i = 0; i < ca.length; i++) {
-              let c = ca[i];
-              while (c.charAt(0) === " ") c = c.substring(1, c.length);
-              if (c.indexOf(nameEQ) === 0)
-                return c.substring(nameEQ.length, c.length);
+
+            if (historyItems && historyItems.length > 0) {
+              historyItems.forEach((item) => {
+                const li = document.createElement("li");
+                li.textContent = item.display;
+                li.dataset.tgcode = item.tgCode;
+                li.addEventListener("click", function () {
+                  document.getElementById("tg_code_input").value =
+                    this.dataset.tgcode;
+                  document.getElementById("marke_input").value = "";
+                  document.getElementById("typ_input").value = "";
+                  document.querySelector(".search-form form").submit();
+                });
+                historyList.appendChild(li);
+              });
+            } else {
+              const li = document.createElement("li");
+              li.textContent = "No history yet.";
+              li.style.cursor = "default";
+              historyList.appendChild(li);
             }
-            return null;
           }
+
+          // Cookie helper functions (setCookie, getCookie) are now globally defined in the script block above
 
           // Accordion Logic
           const accHeaders = document.querySelectorAll(".accordion-header");
@@ -436,7 +629,7 @@
                   openAccordions.push(h.textContent.trim());
                 }
               });
-              setCookie("openAccordions", JSON.stringify(openAccordions), 180); // Save for 180 days
+              setCookie("openAccordions", JSON.stringify(openAccordions), 180); // Uses global setCookie (was 180 days)
             });
           });
 
@@ -468,6 +661,34 @@
                 firstHeader.nextElementSibling.style.display = "block";
               }
             }
+          }
+
+          const historyBtn = document.getElementById("search_history_btn");
+          const historyContainer = document.getElementById(
+            "search_history_container"
+          );
+
+          if (historyBtn && historyContainer) {
+            historyBtn.addEventListener("click", function (event) {
+              event.stopPropagation();
+              const isVisible = historyContainer.style.display === "block";
+              if (isVisible) {
+                historyContainer.style.display = "none";
+              } else {
+                displaySearchHistory();
+                historyContainer.style.display = "block";
+              }
+            });
+
+            document.addEventListener("click", function (event) {
+              if (
+                historyContainer.style.display === "block" &&
+                !historyContainer.contains(event.target) &&
+                !historyBtn.contains(event.target)
+              ) {
+                historyContainer.style.display = "none";
+              }
+            });
           }
 
           // Handle clicks on TG-Codes in multiple results

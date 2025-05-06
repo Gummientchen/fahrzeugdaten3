@@ -425,11 +425,21 @@ def index():
         else: 
             data_for_template = results_from_search
 
-    return render_template('search_results.html', 
-                           results=data_for_template, 
-                           search_performed=search_performed,
-                           error_message=error_message,
-                           data_groups_order=DATA_GROUPS_ORDER) 
+    template_context = {
+        'results': data_for_template,
+        'search_performed': search_performed,
+        'error_message': error_message,
+        'data_groups_order': DATA_GROUPS_ORDER
+    }
+
+    # If it's a single result, pass the specific labels needed for history saving
+    if results_from_search and len(results_from_search) == 1:
+        # These keys must match the keys used in DISPLAY_LABELS for these core fields
+        template_context['actual_tg_code_label'] = DISPLAY_LABELS.get("cars_tg_code", "TG-Code (Typen&shy;genehmigungs&shy;nummer)")
+        template_context['actual_marke_label'] = DISPLAY_LABELS.get("cars_col_04_marke_value", "Marke")
+        template_context['actual_typ_label'] = DISPLAY_LABELS.get("cars_col_04_typ_value", "Typ")
+
+    return render_template('search_results.html', **template_context)
 
 @app.route('/autocomplete/marken')
 def autocomplete_marken():
