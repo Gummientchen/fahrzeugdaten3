@@ -104,6 +104,74 @@ DISPLAY_LABELS = {
     # "cars_col_04_typ_id": "Typ ID (DB)",
 }
 
+# --- Data Grouping for Display ---
+# Maps display labels (as defined in DISPLAY_LABELS or original db_keys) to group names.
+# The order of groups in this dict will influence display order if iterated directly.
+DATA_GROUPS_ORDER = [
+    "Fahrzeug", "Motor", "Türen/Sitzplätze", "Felgen", "Masse", "Achsen", "Spur", 
+    "Gewichte", "Leistungsdaten", "Verbrauch", "Emissionen", "Bemerkungen"
+]
+
+DATA_GROUPS_MAPPING = {
+    # Fahrzeug
+    "TG-Code (Typengenehmigungsnummer)": "Fahrzeug",
+    "Fahrzeugart": "Fahrzeug",
+    "Fahrzeugklasse": "Fahrzeug",
+    "Marke": "Fahrzeug",
+    "Typ": "Fahrzeug",
+    "Karosserieform": "Fahrzeug",
+    "EU Gesamtgenehmigung": "Fahrzeug",
+    "cars_col_05_typ_variante_version": "Fahrzeug", # Assuming this is a direct db_key not in DISPLAY_LABELS yet
+    "Hersteller (Code 10)": "Fahrzeug",
+    "Herstellerplakette": "Fahrzeug",
+    "cars_col_12_fahrgestellnummer_value": "Fahrzeug", # Assuming this is a direct db_key
+    "Achsen/Räder": "Fahrzeug",
+    "Federung": "Fahrzeug",
+    "Lenkung": "Fahrzeug",
+    "Achsantrieb": "Fahrzeug",
+    "Getriebe 1 Art": "Fahrzeug",
+    # Motor
+    "Motor Typ": "Motor",
+    "Motor Bauart": "Motor",
+    "Treibstoff (Motor)": "Motor",
+    # Türen/Sitzplätze
+    "Anzahl Türen": "Türen/Sitzplätze",
+    # Felgen
+    "cars_col_69_reifen_felgen_value": "Felgen", # Assuming this is a direct db_key
+    # Masse
+    "cars_col_40_laenge_von": "Masse", "cars_col_40_laenge_bis": "Masse",
+    "cars_col_41_breite_von": "Masse", "cars_col_41_breite_bis": "Masse",
+    "cars_col_42_hoehe_von": "Masse", "cars_col_42_hoehe_bis": "Masse",
+    # Achsen (Sub-group of Masse in your list, handled by iterating keys)
+    "cars_col_44_abstand_achse_1_2_von": "Achsen", "cars_col_44_abstand_achse_1_2_bis": "Achsen",
+    "cars_col_45_abstand_achse_2_3_von": "Achsen", "cars_col_45_abstand_achse_2_3_bis": "Achsen",
+    "cars_col_46_abstand_achse_3_4_von": "Achsen", "cars_col_46_abstand_achse_3_4_bis": "Achsen",
+    # Spur (Sub-group of Masse in your list)
+    "cars_col_47_spur_achse_1_von": "Spur", "cars_col_47_spur_achse_1_bis": "Spur",
+    "cars_col_48_spur_achse_2_von": "Spur", "cars_col_48_spur_achse_2_bis": "Spur",
+    "cars_col_49_spur_achse_3_von": "Spur", "cars_col_49_spur_achse_3_bis": "Spur",
+    "cars_col_50_spur_achse_4_von": "Spur", "cars_col_50_spur_achse_4_bis": "Spur",
+    # Gewichte
+    "cars_col_52_leergewicht_von": "Gewichte", "cars_col_52_leergewicht_bis": "Gewichte",
+    "cars_col_53_garantiegewicht_von": "Gewichte", "cars_col_53_garantiegewicht_bis": "Gewichte",
+    "Keine Dachlast": "Gewichte", # Assuming col_55_keine_dachlast_value maps to this
+    # Leistungsdaten
+    "emissions_vmax_von": "Leistungsdaten", "emissions_vmax_bis": "Leistungsdaten",
+    "emissions_hubraum": "Leistungsdaten", "emissions_leistung": "Leistungsdaten",
+    "emissions_leistung_bei_n_min": "Leistungsdaten", "emissions_drehmoment": "Leistungsdaten",
+    "emissions_drehmoment_bei_n_min": "Leistungsdaten",
+    # Verbrauch
+    "emissions_tc_consumption": "Verbrauch", "consumption_el_verbrauch_wltp": "Verbrauch",
+    "consumption_el_reichweite_von_wltp": "Verbrauch", "consumption_el_reichweite_bis_wltp": "Verbrauch",
+    # Emissionen
+    "emissions_fahrgeraeusch": "Emissionen", "emissions_standgeraeusch": "Emissionen",
+    "emissions_standgeraeusch_bei_n_min": "Emissionen",
+    "Abgascode": "Emissionen", "Emissionscode": "Emissionen", "Geräuschcode": "Emissionen",
+    "Energieeffizienzkategorie": "Emissionen",
+    # Bemerkungen - This will catch all "Bemerkung Zx" if DISPLAY_LABELS is set up for them
+    # Or you can list them individually if their display labels are unique
+}
+
 @app.route('/', methods=['GET', 'POST'])
 def index():
     results = []
@@ -146,22 +214,32 @@ def index():
     display_results = []
     if results:
         for row_dict in results:
-            formatted_row = {}
-            # Ensure consistent order or sort keys if desired for display
-            # For now, using original dict order (Python 3.7+) or arbitrary (older Python)
+            # Initialize grouped_data with empty dicts for each group to maintain order
+            grouped_data = {group_name: {} for group_name in DATA_GROUPS_ORDER}
+            
             for db_key, value in row_dict.items():
                 # Skip _id columns unless they are the main tg_code or explicitly in DISPLAY_LABELS
                 is_tg_code_key = any(db_key.endswith(tg_code_suffix) for tg_code_suffix in ['_tg_code', '_Typengenehmigungsnummer']) # crude check for tg_code keys
                 
                 if db_key.endswith("_id") and not is_tg_code_key and db_key not in DISPLAY_LABELS:
                     continue # Skip this _id column
-
-                # Only include keys that have a non-None value and, if it's a string, it's not empty/whitespace
-                # For non-string types, `value is not None` is sufficient.
+                
                 if value is not None and (not isinstance(value, str) or value.strip()):
                     display_key = DISPLAY_LABELS.get(db_key, db_key) # Get display label if available, else use db_key
-                    formatted_row[display_key] = value
-            display_results.append(formatted_row)
+                    
+                    # Determine group
+                    group_name = "Sonstige Daten" # Default group
+                    if display_key in DATA_GROUPS_MAPPING:
+                        group_name = DATA_GROUPS_MAPPING[display_key]
+                    elif "Bemerkung" in display_key: # Catch-all for bemerkungen
+                        group_name = "Bemerkungen"
+                    
+                    if group_name not in grouped_data: # Should not happen if DATA_GROUPS_ORDER is comprehensive
+                        grouped_data[group_name] = {}
+                    grouped_data[group_name][display_key] = value
+            
+            # Filter out empty groups before appending
+            display_results.append({group: data for group, data in grouped_data.items() if data})
 
 
     return render_template('search_results.html', 
