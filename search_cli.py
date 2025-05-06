@@ -65,22 +65,21 @@ if __name__ == "__main__":
                                   col_04_marke_id=args.marke_id,
                                   col_04_typ_id=args.typ_id)
         
-        if results and isinstance(results, list) and len(results) > 0 and "clarification_needed_for" in results[0]:
-            clarification_info = results[0]
-            field_name = clarification_info["clarification_needed_for"]
-            log_message(LOG_LEVEL_INFO, f"Multiple matches found for {field_name} string '{args.marke if field_name == 'marke' else args.typ}'.")
-            log_message(LOG_LEVEL_INFO, f"Please refine your search using one of the following IDs with --{field_name}_id:")
-            for match in clarification_info["matches"]:
-                log_message(LOG_LEVEL_INFO, f"  ID: {match['id']}, Value: {match['value']}")
-        elif results:
+        if results:
             log_message(LOG_LEVEL_INFO, f"Search returned {len(results)} result(s).")
-            log_message(LOG_LEVEL_INFO, "Details of the first result (non-None values):")
-            first_result = results[0]
-            for key, value in first_result.items():
-                if value is not None:
-                    log_message(LOG_LEVEL_INFO, f"  {key}: {value}")
-            if len(results) > 1:
-                log_message(LOG_LEVEL_INFO, f"(Plus {len(results) - 1} more result(s) not shown in detail here.)")
+            if len(results) == 1:
+                log_message(LOG_LEVEL_INFO, "Details of the result (non-None values):")
+                first_result = results[0]
+                for key, value in first_result.items():
+                    if value is not None:
+                        log_message(LOG_LEVEL_INFO, f"  {key}: {value}")
+            else: # Multiple car results
+                log_message(LOG_LEVEL_INFO, "Multiple cars found. Please refine your search using a specific TG-Code with --tg_code:")
+                for car_data in results:
+                    tg = car_data.get('cars_tg_code', 'N/A')
+                    marke_val = car_data.get('cars_col_04_marke_value', 'N/A')
+                    typ_val = car_data.get('cars_col_04_typ_value', 'N/A')
+                    log_message(LOG_LEVEL_INFO, f"  TG-Code: {tg}, Marke: {marke_val}, Typ: {typ_val}")
         else:
             log_message(LOG_LEVEL_INFO, "No results found for your criteria.")
     else:

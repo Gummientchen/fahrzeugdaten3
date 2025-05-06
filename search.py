@@ -23,8 +23,8 @@ def search_car_data(db_path: Path,
 
     # --- Convert string search terms to IDs ---
     # These will override direct ID inputs if both are somehow provided
-    final_col_04_marke_id = col_04_marke_id
-    final_col_04_typ_id = col_04_typ_id
+    final_col_04_marke_ids = [col_04_marke_id] if col_04_marke_id is not None else []
+    final_col_04_typ_ids = [col_04_typ_id] if col_04_typ_id is not None else []
 
     if marke_str:
         # Find the lookup table name for 'col_04_marke' in 'cars'
@@ -34,13 +34,11 @@ def search_car_data(db_path: Path,
             matches = cursor.fetchall()
             if not matches:
                 log_message(LOG_LEVEL_WARNING, f"Marke string '{marke_str}' not found in lookup table '{marke_lookup_table}'.")
-                final_col_04_marke_id = -1 # Indicate no match
-            elif len(matches) == 1:
-                final_col_04_marke_id = matches[0]['id']
-            else: # Multiple matches found
-                log_message(LOG_LEVEL_INFO, f"Multiple marken found for '{marke_str}'. Please be more specific.")
-                conn.close()
-                return [{"clarification_needed_for": "marke", "matches": [dict(m) for m in matches]}]
+                final_col_04_marke_ids = [-1] # Use -1 to ensure no SQL match if string not found
+            else:
+                final_col_04_marke_ids = [m['id'] for m in matches]
+                if len(matches) > 1:
+                    log_message(LOG_LEVEL_INFO, f"Found {len(matches)} matching marken for '{marke_str}'. Using all in search.")
         else: log_message(LOG_LEVEL_ERROR, "Lookup table for 'col_04_marke' not defined in config.")
 
     if typ_str:
@@ -50,13 +48,11 @@ def search_car_data(db_path: Path,
             matches = cursor.fetchall()
             if not matches:
                 log_message(LOG_LEVEL_WARNING, f"Typ string '{typ_str}' not found in lookup table '{typ_lookup_table}'.")
-                final_col_04_typ_id = -1 # Indicate no match
-            elif len(matches) == 1:
-                final_col_04_typ_id = matches[0]['id']
-            else: # Multiple matches found
-                log_message(LOG_LEVEL_INFO, f"Multiple typen found for '{typ_str}'. Please be more specific.")
-                conn.close()
-                return [{"clarification_needed_for": "typ", "matches": [dict(m) for m in matches]}]
+                final_col_04_typ_ids = [-1] # Use -1 to ensure no SQL match
+            else:
+                final_col_04_typ_ids = [m['id'] for m in matches]
+                if len(matches) > 1:
+                    log_message(LOG_LEVEL_INFO, f"Found {len(matches)} matching typen for '{typ_str}'. Using all in search.")
         else: log_message(LOG_LEVEL_ERROR, "Lookup table for 'col_04_typ' not defined in config.")
 
     # --- Stage 1: Fetch main data with IDs ---
@@ -86,8 +82,7 @@ def search_car_data(db_path: Path,
     # Build WHERE clause
     search_criteria_map = {
         "tg_code": (f"\"{cars_table_name}\".\"{STANDARDIZED_TG_CODE_COL}\" = :tg_code_val", tg_code),
-        "col_04_marke_id": (f"\"{cars_table_name}\".\"col_04_marke_id\" = :col_04_marke_id_val", final_col_04_marke_id), # Use resolved ID
-        "col_04_typ_id": (f"\"{cars_table_name}\".\"col_04_typ_id\" = :col_04_typ_id_val", final_col_04_typ_id),       # Use resolved ID
+        # For marke_ids and typ_ids, we'll handle IN clause separately if they are lists
         "col_06_vorziffer_id": (f"\"{cars_table_name}\".\"col_06_vorziffer_id\" = :col_06_vorziffer_id_val", col_06_vorziffer_id),
         "col_09_eu_gesamtgenehmigung_id": (f"\"{cars_table_name}\".\"col_09_eu_gesamtgenehmigung_id\" = :col_09_eu_gesamtgenehmigung_id_val", col_09_eu_gesamtgenehmigung_id),
     }
@@ -95,7 +90,19 @@ def search_car_data(db_path: Path,
         if value is not None:
             where_conditions.append(condition_str)
             query_params[f"{param_key}_val"] = value
+
+    if final_col_04_marke_ids:
+        marke_placeholders = ','.join([f':marke_id_{i}' for i in range(len(final_col_04_marke_ids))])
+        where_conditions.append(f"\"{cars_table_name}\".\"col_04_marke_id\" IN ({marke_placeholders})")
+        for i, mid in enumerate(final_col_04_marke_ids):
+            query_params[f'marke_id_{i}'] = mid
             
+    if final_col_04_typ_ids:
+        typ_placeholders = ','.join([f':typ_id_{i}' for i in range(len(final_col_04_typ_ids))])
+        where_conditions.append(f"\"{cars_table_name}\".\"col_04_typ_id\" IN ({typ_placeholders})")
+        for i, tid in enumerate(final_col_04_typ_ids):
+            query_params[f'typ_id_{i}'] = tid
+
     main_sql = f"SELECT {', '.join(main_select_clauses)} {main_from_sql} {' '.join(main_join_clauses_str)}"
     if where_conditions:
         main_sql += " WHERE " + " AND ".join(where_conditions)
