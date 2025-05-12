@@ -75,7 +75,9 @@
       <div class="error-message">{{ error_message }}</div>
       {% endif %} {% if search_performed and not error_message %} {% if results
       %}
-      <div class="results-count">{{ results|length }} Ergebnis(se) gefunden.</div>
+      {% if results|length > 1 %}
+        <div class="results-count">{{ results|length }} Ergebnis(se) gefunden.</div>
+      {% endif %}
 
       {% if results|length == 1 %} {% set car_data_grouped = results[0] %}
       <h2>Fahrzeugdetails</h2>

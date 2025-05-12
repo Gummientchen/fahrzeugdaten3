@@ -1,3 +1,97 @@
+:root {
+  /* Light Theme Variables */
+  --body-bg: #f4f4f4;
+  --text-color: #333;
+  --container-bg: #fff;
+  --container-shadow: rgba(0, 0, 0, 0.1);
+  --input-bg: #fff;
+  --input-border: #ccc;
+  --input-text: #333;
+  --button-primary-bg: #5cb85c;
+  --button-primary-text: white;
+  --button-primary-hover-bg: #4cae4c;
+  --button-secondary-bg: #6c757d;
+  --button-secondary-text: white;
+  --button-secondary-hover-bg: #5a6268;
+  --link-color: #007bff;
+  --table-border: #ddd;
+  --table-header-bg: #f0f0f0;
+  --accordion-header-bg: #e9ecef;
+  --accordion-header-text: #495057;
+  --accordion-header-hover-bg: #dee2e6;
+  --accordion-header-icon-color: #495057;
+  --accordion-panel-bg: #fff;
+  --autocomplete-bg: #fff;
+  --autocomplete-border: #ccc;
+  --autocomplete-hover-bg: #f0f0f0;
+  --history-dropdown-bg: #fff;
+  --history-dropdown-border: #ccc;
+  --history-dropdown-shadow: rgba(0, 0, 0, 0.15);
+  --history-item-border: #eee;
+  --history-item-hover-bg: #f0f0f0;
+  --message-info-bg: #dff0d8;
+  --message-info-border: #d6e9c6;
+  --message-info-text: #3c763d;
+  --message-error-bg: #f2dede;
+  --message-error-border: #ebccd1;
+  --message-error-text: #a94442;
+  --message-warning-bg: #fcf8e3;
+  --message-warning-border: #faebcc;
+  --message-warning-text: #8a6d3b;
+  --multiple-results-item-bg: #f9f9f9;
+  --multiple-results-item-border: #eee;
+  --multiple-results-item-shadow: rgba(0, 0, 0, 0.05);
+  --form-button-bg: #f0f0f0;
+  --form-button-border: #ccc;
+  --form-button-text: #333; /* Assuming default text color for these */
+}
+
+body.dark-mode {
+  /* Dark Theme Variable Overrides */
+  --body-bg: #121212;
+  --text-color: #e0e0e0;
+  --container-bg: #1e1e1e;
+  --container-shadow: rgba(0, 0, 0, 0.5);
+  --input-bg: #2a2a2a;
+  --input-border: #555;
+  --input-text: #e0e0e0;
+  --button-primary-bg: #28a745; /* Slightly brighter green for dark mode */
+  --button-primary-hover-bg: #218838;
+  --button-secondary-bg: #5a6268;
+  --button-secondary-hover-bg: #495057;
+  --link-color: #66bfff;
+  --table-border: #444;
+  --table-header-bg: #2c2c2c;
+  --accordion-header-bg: #303336;
+  --accordion-header-text: #ecf0f1;
+  --accordion-header-hover-bg: #2e353c;
+  --accordion-header-icon-color: #ecf0f1;
+  --accordion-panel-bg: #1e1e1e;
+  --autocomplete-bg: #2a2a2a;
+  --autocomplete-border: #555;
+  --autocomplete-hover-bg: #3a3a3a;
+  --history-dropdown-bg: #2a2a2a;
+  --history-dropdown-border: #555;
+  --history-dropdown-shadow: rgba(0, 0, 0, 0.5);
+  --history-item-border: #444;
+  --history-item-hover-bg: #3a3a3a;
+  --message-info-bg: #1c3c24;
+  --message-info-border: #2a5c36;
+  --message-info-text: #a6d7b5;
+  --message-error-bg: #4a2323;
+  --message-error-border: #6e3434;
+  --message-error-text: #f2aaaa;
+  --message-warning-bg: #4d4223;
+  --message-warning-border: #756334;
+  --message-warning-text: #fcf8b3;
+  --multiple-results-item-bg: #252525;
+  --multiple-results-item-border: #383838;
+  --multiple-results-item-shadow: rgba(0, 0, 0, 0.2);
+  --form-button-bg: #3a3a3a;
+  --form-button-border: #555;
+  --form-button-text: #e0e0e0;
+}
+
 html {
   min-height: 100%;
 }
@@ -5,7 +99,8 @@ html {
 body {
   font-family: sans-serif;
   padding: 0; /* Adjust top/bottom padding as needed, remove side padding */
-  background-color: #f4f4f4;
+  background-color: var(--body-bg);
+  color: var(--text-color);
   margin: 0;
   min-height: 100vh; /* Use viewport height unit for full height */
   display: flex; /* Used to help center the container if body is full height */
@@ -13,10 +108,10 @@ body {
   align-items: center; /* Center .container horizontally */
 }
 .container {
-  background-color: #fff;
+  background-color: var(--container-bg);
   padding: 20px;
   border-radius: 5px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 0 10px var(--container-shadow);
   max-width: 1000px; /* Set the maximum width */
   width: 100%; /* Ensure it's responsive below max-width */
   margin: 0 auto; /* Center the container on the page */
@@ -33,18 +128,21 @@ body {
 .search-form input[type="text"] {
   padding: 8px;
   margin-bottom: 10px;
-  border: 1px solid #ccc;
+  border: 1px solid var(--input-border);
+  background-color: var(--input-bg);
+  color: var(--input-text);
   border-radius: 3px;
   width: 250px; /* Adjust as needed */
   vertical-align: middle; /* Align with input */
 }
 .search-form input[type="submit"] {
-  background-color: #5cb85c;
-  color: white;
+  background-color: var(--button-primary-bg);
+  color: var(--button-primary-text);
   border: none;
+  /* Inherits from .form-button if applied, or add padding here */
 }
 .search-form input[type="submit"]:hover {
-  background-color: #4cae4c;
+  background-color: var(--button-primary-hover-bg);
 }
 .results-count,
 .error-message,
@@ -54,19 +152,19 @@ body {
   border-radius: 3px;
 }
 .results-count {
-  background-color: #dff0d8;
-  border: 1px solid #d6e9c6;
-  color: #3c763d;
+  background-color: var(--message-info-bg);
+  border: 1px solid var(--message-info-border);
+  color: var(--message-info-text);
 }
 .error-message {
-  background-color: #f2dede;
-  border: 1px solid #ebccd1;
-  color: #a94442;
+  background-color: var(--message-error-bg);
+  border: 1px solid var(--message-error-border);
+  color: var(--message-error-text);
 }
 .no-results-message {
-  background-color: #fcf8e3;
-  border: 1px solid #faebcc;
-  color: #8a6d3b;
+  background-color: var(--message-warning-bg);
+  border: 1px solid var(--message-warning-border);
+  color: var(--message-warning-text);
 }
 table {
   width: 100%;
@@ -76,7 +174,7 @@ table {
 }
 th,
 td {
-  border: 1px solid #ddd;
+  border: 1px solid var(--table-border);
   padding: 8px;
   text-align: left;
   /* General word break for all cells, can be overridden */
@@ -84,7 +182,7 @@ td {
   overflow-wrap: break-word;
 }
 th {
-  background-color: #f0f0f0;
+  background-color: var(--table-header-bg);
 }
 /* Style for the first column (labels) in accordion tables */
 .accordion-panel table td:first-child {
@@ -112,30 +210,30 @@ th {
   padding: 5px;
   border-radius: 3px;
   /* New styles for card-like appearance */
-  background-color: #f9f9f9;
-  border: 1px solid #eee;
+  background-color: var(--multiple-results-item-bg);
+  border: 1px solid var(--multiple-results-item-border);
   padding: 10px 15px;
   margin-bottom: 10px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 1px 3px var(--multiple-results-item-shadow);
 }
 .multiple-results-list li div {
   margin-bottom: 5px; /* Space between data lines in the card */
 }
 .clickable-tg-code {
   cursor: pointer;
-  color: #007bff; /* Make it look like a link */
+  color: var(--link-color); /* Make it look like a link */
 }
 .form-field-container {
   position: relative;
   margin-bottom: 10px; /* Match original input margin + <br> effect */
 }
 .autocomplete-suggestions {
-  border: 1px solid #ccc;
+  border: 1px solid var(--autocomplete-border);
   border-top: none;
   max-height: 150px;
   overflow-y: auto;
   position: absolute;
-  background-color: white;
+  background-color: var(--autocomplete-bg);
   z-index: 1000;
   /* Mobile-first: suggestions align with input, assuming input starts at left of its line */
   width: 250px; /* Match the input field's width */
@@ -148,15 +246,15 @@ th {
   cursor: pointer;
 }
 .autocomplete-suggestions div:hover {
-  background-color: #f0f0f0;
+  background-color: var(--autocomplete-hover-bg);
 }
 .form-field-container input[type="text"] {
   margin-bottom: 0; /* Override general margin, space is now handled by container's margin-bottom */
 }
 /* Accordion Styles */
 .accordion-header {
-  background-color: #e9ecef; /* Light grey, distinct from table header */
-  color: #495057;
+  background-color: var(--accordion-header-bg);
+  color: var(--accordion-header-text);
   cursor: pointer;
   padding: 12px 18px;
   width: 100%;
@@ -168,17 +266,16 @@ th {
   transition: background-color 0.3s ease;
   margin-top: 8px;
   border-radius: 4px;
-  border-bottom: 1px solid #ced4da;
 }
 .accordion-header.active,
 .accordion-header:hover {
-  background-color: #dee2e6;
+  background-color: var(--accordion-header-hover-bg);
 }
 .accordion-header:after {
   /* Plus/Minus icon */
   content: "\002B"; /* Plus */
   font-size: 1.1em;
-  color: #495057;
+  color: var(--accordion-header-icon-color);
   float: right;
   margin-left: 5px;
 }
@@ -187,30 +284,30 @@ th {
 }
 .accordion-panel {
   padding: 0; /* Panel itself has no padding, table inside will */
-  background-color: white;
+  background-color: var(--accordion-panel-bg);
   display: none; /* Hidden by default */
   overflow: hidden;
 }
 /* Search History Styles */
 #search_history_btn {
   margin-left: 10px; /* Space next to Search button */
-  background-color: #6c757d; /* A neutral color */
-  color: white;
+  background-color: var(--button-secondary-bg);
+  color: var(--button-secondary-text);
   border: none;
   vertical-align: middle; /* Align with other form elements */
 }
 #search_history_btn:hover {
-  background-color: #5a6268;
+  background-color: var(--button-secondary-hover-bg);
 }
 .search-history-dropdown {
   position: absolute;
-  background-color: white;
-  border: 1px solid #ccc;
+  background-color: var(--history-dropdown-bg);
+  border: 1px solid var(--history-dropdown-border);
   z-index: 1001; /* Above autocomplete */
   max-height: 250px;
   overflow-y: auto;
   width: 300px; /* Adjust as needed */
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 5px var(--history-dropdown-shadow);
   margin-top: 5px; /* Space below the button row */
 }
 .search-history-dropdown ul {
@@ -221,19 +318,20 @@ th {
 .search-history-dropdown li {
   padding: 8px 12px;
   cursor: pointer;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--history-item-border);
 }
 .search-history-dropdown li:last-child {
   border-bottom: none;
 }
 .search-history-dropdown li:hover {
-  background-color: #f0f0f0;
+  background-color: var(--history-item-hover-bg);
 }
 
 .form-button {
   padding: 10px 15px; /* Adjust as needed */
-  border: 1px solid #ccc; /* Example border */
-  background-color: #f0f0f0; /* Example background */
+  border: 1px solid var(--form-button-border);
+  background-color: var(--form-button-bg);
+  color: var(--form-button-text);
   cursor: pointer;
   font-size: inherit; /* Inherit font size from parent */
   line-height: normal; /* Ensure consistent line height */

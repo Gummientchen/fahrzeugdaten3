@@ -58,6 +58,11 @@ function setupAutocomplete(
   const suggestionsContainer = document.getElementById(suggestionsId);
   let debounceTimer;
 
+  if (!inputField || !suggestionsContainer) {
+    // console.error("Autocomplete setup failed: Input or suggestions container not found for", inputId);
+    return;
+  }
+
   inputField.addEventListener("input", function () {
     clearTimeout(debounceTimer);
     const term = this.value;
@@ -75,12 +80,14 @@ function setupAutocomplete(
         term
       )}`;
       if (isTypField) {
-        const markeValue = document.getElementById("marke_input").value;
-        if (markeValue && markeValue.trim()) {
-          // Ensure markeValue is not empty and not just whitespace
-          currentEndpointUrl += `&marke=${encodeURIComponent(
-            markeValue.trim()
-          )}`;
+        const markeValueElement = document.getElementById("marke_input");
+        if (markeValueElement) {
+            const markeValue = markeValueElement.value;
+            if (markeValue && markeValue.trim()) {
+              currentEndpointUrl += `&marke=${encodeURIComponent(
+                markeValue.trim()
+              )}`;
+            }
         }
       }
 
@@ -127,6 +134,30 @@ function setupAutocomplete(
 }
 
 document.addEventListener("DOMContentLoaded", function () {
+  // Dark Mode Logic (Automatic based on system preference)
+  const body = document.body;
+  const prefersDarkScheme = window.matchMedia("(prefers-color-scheme: dark)");
+
+  function applySystemThemePreference(event) {
+    // event can be the initial load (event.matches) or a change event
+    if (event.matches) {
+      body.classList.add("dark-mode");
+    } else {
+      body.classList.remove("dark-mode");
+    }
+  }
+
+  // Apply the theme based on initial system preference
+  applySystemThemePreference(prefersDarkScheme);
+
+  // Listen for changes in system preference
+  try {
+    prefersDarkScheme.addEventListener("change", applySystemThemePreference);
+  } catch (e) { // Fallback for older browsers
+    prefersDarkScheme.addListener(applySystemThemePreference);
+  }
+  // End Dark Mode Logic
+
   setupAutocomplete("marke_input", "marke_suggestions", "/autocomplete/marken");
   setupAutocomplete(
     "typ_input",
@@ -137,6 +168,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
   function displaySearchHistory() {
     const historyList = document.getElementById("search_history_list");
+    if (!historyList) return; // Guard clause
+
     historyList.innerHTML = ""; // Clear previous items
     const savedHistory = getCookie(HISTORY_COOKIE_NAME);
     let historyItems = []; // Initialize as empty array
@@ -156,16 +189,21 @@ document.addEventListener("DOMContentLoaded", function () {
         li.textContent = item.display;
         li.dataset.tgcode = item.tgCode;
         li.addEventListener("click", function () {
-          document.getElementById("tg_code_input").value = this.dataset.tgcode;
-          document.getElementById("marke_input").value = "";
-          document.getElementById("typ_input").value = "";
-          document.querySelector(".search-form form").submit();
+          const tgCodeInputElement = document.getElementById("tg_code_input");
+          const markeInputElement = document.getElementById("marke_input");
+          const typInputElement = document.getElementById("typ_input");
+          const searchFormElement = document.querySelector(".search-form form");
+
+          if (tgCodeInputElement) tgCodeInputElement.value = this.dataset.tgcode;
+          if (markeInputElement) markeInputElement.value = "";
+          if (typInputElement) typInputElement.value = "";
+          if (searchFormElement) searchFormElement.submit();
         });
         historyList.appendChild(li);
       });
     } else {
       const li = document.createElement("li");
-      li.textContent = "No history yet.";
+      li.textContent = "Noch kein Suchverlauf."; // Translated
       li.style.cursor = "default";
       historyList.appendChild(li);
     }
@@ -177,10 +215,13 @@ document.addEventListener("DOMContentLoaded", function () {
     header.addEventListener("click", function () {
       this.classList.toggle("active");
       const panel = this.nextElementSibling;
-      if (panel.style.display === "block") {
-        panel.style.display = "none";
-      } else {
-        panel.style.display = "block";
+      // Ensure the panel exists and is an accordion panel
+      if (panel && panel.classList.contains('accordion-panel')) {
+        if (panel.style.display === "block") {
+          panel.style.display = "none";
+        } else {
+          panel.style.display = "block";
+        }
       }
       // Save open accordion state to cookie
       const openAccordions = [];
@@ -195,17 +236,14 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Restore accordion state from cookie or open the first one
   if (accHeaders.length > 0) {
-    // The presence of accordion headers implies we are on a page where their state should be managed.
-    // The check for "Car Details" h2 text was problematic after translation.
-    const savedOpenAccordions = getCookie("openAccordions"); // Uses your existing cookie name
+    const savedOpenAccordions = getCookie("openAccordions");
     if (savedOpenAccordions) {
       try {
         const openLabels = JSON.parse(savedOpenAccordions);
-        if (Array.isArray(openLabels)) { // Ensure it's an array
+        if (Array.isArray(openLabels)) {
           accHeaders.forEach((header) => {
             if (openLabels.includes(header.textContent.trim())) {
               header.classList.add("active");
-              // Ensure the panel exists and is an accordion panel
               if (header.nextElementSibling && header.nextElementSibling.classList.contains('accordion-panel')) {
                 header.nextElementSibling.style.display = "block";
               }
@@ -218,12 +256,12 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     } else {
       // If no cookie, or cookie was invalid, open the first accordion by default
-      if (accHeaders.length > 0) { // Check again in case accHeaders was empty initially
+      if (accHeaders.length > 0) {
         const firstHeader = accHeaders[0];
         firstHeader.classList.add("active");
         if (firstHeader.nextElementSibling && firstHeader.nextElementSibling.classList.contains('accordion-panel')) {
-              header.nextElementSibling.style.display = "block";
-            }
+          firstHeader.nextElementSibling.style.display = "block";
+        }
       }
     }
   }
@@ -238,11 +276,12 @@ document.addEventListener("DOMContentLoaded", function () {
       if (isVisible) {
         historyContainer.style.display = "none";
       } else {
-        displaySearchHistory();
+        displaySearchHistory(); // Populate history before showing
         historyContainer.style.display = "block";
       }
     });
 
+    // Close history dropdown if clicked outside
     document.addEventListener("click", function (event) {
       if (
         historyContainer.style.display === "block" &&
@@ -259,10 +298,12 @@ document.addEventListener("DOMContentLoaded", function () {
   if (multipleResultsList) {
     multipleResultsList.addEventListener("click", function (event) {
       let targetElement = event.target;
+      // Traverse up to find the clickable-tg-code element or the li parent
       while (
         targetElement != null &&
         !targetElement.classList.contains("clickable-tg-code")
       ) {
+        if (targetElement.tagName === 'LI') break; // Stop if we reach the LI without finding the div
         targetElement = targetElement.parentElement;
       }
 
@@ -272,10 +313,15 @@ document.addEventListener("DOMContentLoaded", function () {
       ) {
         const tgCode = targetElement.dataset.tgcode;
         if (tgCode) {
-          document.getElementById("tg_code_input").value = tgCode;
-          document.getElementById("marke_input").value = "";
-          document.getElementById("typ_input").value = "";
-          document.querySelector(".search-form form").submit();
+          const tgCodeInputElement = document.getElementById("tg_code_input");
+          const markeInputElement = document.getElementById("marke_input");
+          const typInputElement = document.getElementById("typ_input");
+          const searchFormElement = document.querySelector(".search-form form");
+
+          if (tgCodeInputElement) tgCodeInputElement.value = tgCode;
+          if (markeInputElement) markeInputElement.value = "";
+          if (typInputElement) typInputElement.value = "";
+          if (searchFormElement) searchFormElement.submit();
         }
       }
     });
