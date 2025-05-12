@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Car Data Search</title>
+    <title>Fahrzeugdatensuche</title>
     <link
       rel="stylesheet"
       href="{{ url_for('static', filename='css/styles.css') }}"
@@ -11,11 +11,11 @@
   </head>
   <body>
     <div class="container">
-      <h1>Car Data Search</h1>
+      <h1>Fahrzeugdatensuche</h1>
 
       <div class="search-form">
         <form method="POST" action="/">
-          <label for="tg_code_input">TG-Code:</label>
+          <label for="tg_code_input">TG-Nummer:</label>
           <!-- Changed id to tg_code_input for consistency -->
           <input
             type="text"
@@ -25,7 +25,7 @@
           /><br />
 
           <div class="form-field-container">
-            <label for="marke_input">Marke (fuzzy):</label>
+            <label for="marke_input">Marke:</label>
             <input
               type="text"
               name="marke"
@@ -37,7 +37,7 @@
           </div>
 
           <div class="form-field-container">
-            <label for="typ_input">Typ (fuzzy):</label>
+            <label for="typ_input">Typ:</label>
             <input
               type="text"
               name="typ"
@@ -48,10 +48,19 @@
             <div id="typ_suggestions" class="autocomplete-suggestions"></div>
           </div>
 
-          <!-- Removed the <br> here as form-field-container handles spacing -->
+          <div class="form-field-container">
+            <label for="year_input">Genehmigungsjahr:</label>
+            <input
+              type="text"
+              name="year"
+              id="year_input"
+              value="{{ request.form.year }}"
+              placeholder="YYYY"
+            />
+          </div>
 
-          <input type="submit" value="Search" />
-          <button type="button" id="search_history_btn">Search History</button>
+          <input type="submit" value="Suchen" class="form-button" />
+          <button type="button" id="search_history_btn" class="form-button">Suchverlauf</button>
           <div
             id="search_history_container"
             class="search-history-dropdown"
@@ -66,12 +75,12 @@
       <div class="error-message">{{ error_message }}</div>
       {% endif %} {% if search_performed and not error_message %} {% if results
       %}
-      <div class="results-count">Found {{ results|length }} result(s).</div>
+      <div class="results-count">{{ results|length }} Ergebnis(se) gefunden.</div>
 
       {% if results|length == 1 %} {% set car_data_grouped = results[0] %}
-      <h2>Car Details</h2>
+      <h2>Fahrzeugdetails</h2>
       {% for group_name in data_groups_order %} {% if group_name in
-      car_data_grouped and car_data_grouped[group_name] %}
+      car_data_grouped and car_data_grouped[group_name] %} {# group_name will still be from config, e.g., "Allgemeine Informationen" #}
       <button class="accordion-header">{{ group_name }}</button>
       <div class="accordion-panel">
         <div style="overflow-x: auto; padding: 15px 0">
@@ -79,7 +88,7 @@
           <table>
             {% for key, value in car_data_grouped[group_name].items() %}
             <tr>
-              <td>{{ key|safe }}</td>
+              <td>{{ key|safe }}</td> {# key will still be from config, e.g., "Marke" #}
               {# Label cell - will use td:first-child style #}
               <td>{{ value }}</td>
               {# Value cell - will use td:nth-child(2) style #}
@@ -90,10 +99,9 @@
       </div>
       {% endif %} {% endfor %} {% else %} {# Multiple results #}
       <h2>Multiple Results Found</h2>
-      <p>
-        Please refine your search, possibly by using a specific TG-Code from the
-        list below.
-      </p>
+      <p> <!-- This was "Multiple Results Found" -->
+        Mehrere Ergebnisse gefunden. Bitte verfeinern Sie Ihre Suche, möglicherweise durch Verwendung einer spezifischen TG-Nummer aus der Liste unten.
+      </p> <!-- This was "Please refine your search..." -->
       <ul class="multiple-results-list">
         {% for car_summary in results %} {# These keys must match what search.py
         returns for multiple results (raw dict from DB) #}
@@ -102,22 +110,66 @@
             class="clickable-tg-code"
             data-tgcode="{{ car_summary.get('cars_tg_code', '') }}"
           >
-            <strong>TG-Code:</strong>
+            <strong>TG-Nummer:</strong>
             {{ car_summary.get('cars_tg_code', 'N/A') }}
           </div>
           <div>
-            <strong>Marke:</strong> {{
-            car_summary.get('cars_col_04_marke_value', 'N/A') }}
+            <strong>Marke:</strong>
+            {{ car_summary.get('cars_col_04_marke_value', 'N/A') }}
           </div>
           <div>
-            <strong>Typ:</strong> {{ car_summary.get('cars_col_04_typ_value',
-            'N/A') }}
+            <strong>Typ:</strong>
+            {{ car_summary.get('cars_col_04_typ_value', 'N/A') }}
+          </div>
+          <div>
+            <strong>Genehmigungsjahr:</strong>
+            {% set raw_date_value = car_summary.get('cars_typengenehmigung_erteilt', None) %}
+            {% set year_display = 'N/A' %} {# N/A for Nicht Verfügbar #}
+            {% set date_str = '' %} {# Initialize to empty string #}
+
+            {% if raw_date_value is not none %}
+              {% if raw_date_value is string %}
+                {% set date_str = raw_date_value|trim %}
+              {% elif raw_date_value is number %}
+                {% set date_str = raw_date_value|string|trim %} {# Convert number to string and trim #}
+              {% endif %}
+            {% endif %}
+
+            {% if date_str %} {# Check if date_str is not empty after potential conversion/trimming #}
+              {% if '.' in date_str and date_str.split('.')|length == 3 and date_str.split('.')[-1]|length == 4 and date_str.split('.')[-1].isdigit() %}
+                {% set year_display = date_str.split('.')[-1] %}
+              {% elif '-' in date_str and date_str.split('-')|length == 3 and date_str.split('-')[0]|length == 4 and date_str.split('-')[0].isdigit() %}
+                {% set year_display = date_str.split('-')[0] %}
+              {% elif date_str|length == 8 and date_str.isdigit() %} {# Attempt to parse YYYYMMDD #}
+                {% set year_display = date_str[0:4] %} {# Extract first 4 characters as year #}
+              {% elif date_str|length == 4 and date_str.isdigit() %} {# Is it already just a 4-digit year? #}
+                {% set year_display = date_str %}
+                {% endif %}
+            {% endif %}
+            {{ year_display }}
+          </div>
+          <div>
+            <strong>Power:</strong>
+            {% set kw_value = car_summary.get('cars_col_28_leistung_kw', 'N/A') %}
+            {% set ps_value_display = 'N/A' %}
+            {% if kw_value != 'N/A' %}
+              {% set kw_float = kw_value|float(0) %} {# Try to convert to float, default to 0 if not possible #}
+              {% if kw_float > 0 or kw_value == '0' %} {# Check if conversion was successful and it's a plausible number #}
+                {% set ps_value = (kw_float * 1.35962)|round(0, 'ceil')|int %} {# Calculate PS and round up to nearest integer #}
+                {% set ps_value_display = ps_value ~ " PS" %}
+                {{ kw_value }} kW / {{ ps_value_display }}
+              {% else %}
+                {{ kw_value }} kW / N/A PS {# Show N/A for PS if kW is not a valid number #}
+              {% endif %}
+            {% else %}
+              N/A
+            {% endif %}
           </div>
         </li>
         {% endfor %}
       </ul>
       {% endif %} {% else %}
-      <div class="no-results-message">No results found for your criteria.</div>
+      <div class="no-results-message">Keine Ergebnisse für Ihre Kriterien gefunden.</div>
       {% endif %} {% endif %} {% if results and results|length == 1 %} {# This
       script block will only be rendered if a single car result is displayed #}
       {# It's used to add the current car to the search history #}
@@ -174,11 +226,11 @@
 
             if (tgCodeForHistory) {
                 let displayNameForHistory = ((markeForHistory || "") + " " + (typForHistory || "")).trim();
-                displayNameForHistory = displayNameForHistory ? `${displayNameForHistory} (${tgCodeForHistory})` : `TG: ${tgCodeForHistory}`;
+                displayNameForHistory = displayNameForHistory ? `${displayNameForHistory} (${tgCodeForHistory})` : `TG-Nr.: ${tgCodeForHistory}`;
                 console.log("History Saver (Embedded Script): Adding to history with DisplayName:", displayNameForHistory, "and TGCode:", tgCodeForHistory); // Log 12
                 window.addSearchToHistory(tgCodeForHistory, displayNameForHistory); // Call the global function
             } else {
-                console.warn("History Saver (Embedded Script): No TG Code found for the current car. Not adding to history."); // Log 13
+                console.warn("History Saver (Embedded Script): Keine TG-Nummer für das aktuelle Fahrzeug gefunden. Wird nicht zum Verlauf hinzugefügt."); // Log 13
             }
           } else {
             console.error("History Saver (Embedded Script): addSearchToHistory is NOT a function or not defined on window."); // Log 14

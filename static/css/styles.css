@@ -1,13 +1,25 @@
+html {
+  min-height: 100%;
+}
+
 body {
   font-family: sans-serif;
-  margin: 10px; /* Reduced margin for more space */
+  padding: 0; /* Adjust top/bottom padding as needed, remove side padding */
   background-color: #f4f4f4;
+  margin: 0;
+  min-height: 100vh; /* Use viewport height unit for full height */
+  display: flex; /* Used to help center the container if body is full height */
+  flex-direction: column; /* Stack children vertically */
+  align-items: center; /* Center .container horizontally */
 }
 .container {
   background-color: #fff;
   padding: 20px;
   border-radius: 5px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  max-width: 1000px; /* Set the maximum width */
+  width: 100%; /* Ensure it's responsive below max-width */
+  margin: 0 auto; /* Center the container on the page */
 }
 .search-form {
   margin-bottom: 20px;
@@ -27,12 +39,9 @@ body {
   vertical-align: middle; /* Align with input */
 }
 .search-form input[type="submit"] {
-  padding: 10px 15px;
   background-color: #5cb85c;
   color: white;
   border: none;
-  border-radius: 3px;
-  cursor: pointer;
 }
 .search-form input[type="submit"]:hover {
   background-color: #4cae4c;
@@ -184,13 +193,10 @@ th {
 }
 /* Search History Styles */
 #search_history_btn {
-  padding: 8px 12px;
   margin-left: 10px; /* Space next to Search button */
   background-color: #6c757d; /* A neutral color */
   color: white;
   border: none;
-  border-radius: 3px;
-  cursor: pointer;
   vertical-align: middle; /* Align with other form elements */
 }
 #search_history_btn:hover {
@@ -223,6 +229,20 @@ th {
 .search-history-dropdown li:hover {
   background-color: #f0f0f0;
 }
+
+.form-button {
+  padding: 10px 15px; /* Adjust as needed */
+  border: 1px solid #ccc; /* Example border */
+  background-color: #f0f0f0; /* Example background */
+  cursor: pointer;
+  font-size: inherit; /* Inherit font size from parent */
+  line-height: normal; /* Ensure consistent line height */
+  /* You might also want to set a min-width or width if you want them exactly the same */
+  min-width: 100px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
 
 /* Desktop overrides for autocomplete suggestions positioning */
 @media (min-width: 480px) {

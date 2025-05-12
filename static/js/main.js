@@ -195,28 +195,35 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Restore accordion state from cookie or open the first one
   if (accHeaders.length > 0) {
-    const carDetailsTitle = document.querySelector("h2");
-    if (
-      carDetailsTitle &&
-      carDetailsTitle.textContent.trim() === "Car Details"
-    ) {
-      const savedOpenAccordions = getCookie("openAccordions");
-      if (savedOpenAccordions) {
-        try {
-          const openLabels = JSON.parse(savedOpenAccordions);
+    // The presence of accordion headers implies we are on a page where their state should be managed.
+    // The check for "Car Details" h2 text was problematic after translation.
+    const savedOpenAccordions = getCookie("openAccordions"); // Uses your existing cookie name
+    if (savedOpenAccordions) {
+      try {
+        const openLabels = JSON.parse(savedOpenAccordions);
+        if (Array.isArray(openLabels)) { // Ensure it's an array
           accHeaders.forEach((header) => {
             if (openLabels.includes(header.textContent.trim())) {
               header.classList.add("active");
-              header.nextElementSibling.style.display = "block";
+              // Ensure the panel exists and is an accordion panel
+              if (header.nextElementSibling && header.nextElementSibling.classList.contains('accordion-panel')) {
+                header.nextElementSibling.style.display = "block";
+              }
             }
           });
-        } catch (e) {
-          console.error("Error parsing accordion cookie", e);
         }
-      } else {
+      } catch (e) {
+        console.error("Error parsing accordion cookie 'openAccordions':", e);
+        // Optionally, clear the bad cookie: setCookie("openAccordions", "", -1);
+      }
+    } else {
+      // If no cookie, or cookie was invalid, open the first accordion by default
+      if (accHeaders.length > 0) { // Check again in case accHeaders was empty initially
         const firstHeader = accHeaders[0];
         firstHeader.classList.add("active");
-        firstHeader.nextElementSibling.style.display = "block";
+        if (firstHeader.nextElementSibling && firstHeader.nextElementSibling.classList.contains('accordion-panel')) {
+              header.nextElementSibling.style.display = "block";
+            }
       }
     }
   }

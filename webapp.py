@@ -184,15 +184,17 @@ def index():
         tg_code_input = request.form.get('tg_code')
         marke_str_input = request.form.get('marke')
         typ_str_input = request.form.get('typ')
+        year_input = request.form.get('year') # Get the year input
         # Removed marke_id and typ_id from form, so these will be None
         col_04_marke_id = None
         col_04_typ_id = None
         tg_code = tg_code_input.strip().upper() if tg_code_input and tg_code_input.strip() else None
         marke_str = marke_str_input if marke_str_input and marke_str_input.strip() else None
         typ_str = typ_str_input if typ_str_input and typ_str_input.strip() else None
+        year_str = year_input.strip() if year_input and year_input.strip() else None
 
-        if not any([tg_code, marke_str, typ_str]): # Simplified check
-            error_message = "Please enter at least one search criterion."
+        if not any([tg_code, marke_str, typ_str, year_str]): # Updated check
+            error_message = "Please enter at least one search criterion (TG-Code, Marke, Typ, or Year)."
         else:
             try:
                 # Convert DATABASE_PATH to Path object if it's a string
@@ -201,7 +203,8 @@ def index():
                     db_path=db_path_obj,
                     tg_code=tg_code,
                     marke_str=marke_str,
-                    typ_str=typ_str
+                    typ_str=typ_str,
+                    year_str=year_str # Pass the year string
                     # col_04_marke_id and col_04_typ_id are not passed as they are None
                 )
             except Exception as e:

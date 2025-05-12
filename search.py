@@ -8,6 +8,7 @@ def search_car_data(db_path: Path,
                     tg_code: str = None, 
                     marke_str: str = None, # New: search by marke string
                     typ_str: str = None,   # New: search by typ string
+                    year_str: str = None,  # New: search by year string (YYYY)
                     # Keep ID based search for internal/advanced use if needed, or remove if only string search is desired
                     col_04_marke_id: int = None,
                     col_04_typ_id: int = None,
@@ -102,6 +103,12 @@ def search_car_data(db_path: Path,
         where_conditions.append(f"\"{cars_table_name}\".\"col_04_typ_id\" IN ({typ_placeholders})")
         for i, tid in enumerate(final_col_04_typ_ids):
             query_params[f'typ_id_{i}'] = tid
+
+    if year_str:
+        # Assuming 'typengenehmigung_erteilt' is the column in the 'cars' table (cars_table_name)
+        # and it stores the date as YYYYMMDD. SUBSTR will extract the YYYY part.
+        where_conditions.append(f"SUBSTR(\"{cars_table_name}\".\"typengenehmigung_erteilt\", 1, 4) = :year_val")
+        query_params['year_val'] = year_str
 
     main_sql = f"SELECT {', '.join(main_select_clauses)} {main_from_sql} {' '.join(main_join_clauses_str)}"
     if where_conditions:
